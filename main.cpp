@@ -10,15 +10,14 @@
 #include "ThreadPool.h"
 
 #define NUM_THREADS (16)                 //线程数量
-#define TEST_COUNT  (10000000)           //测试数据量
-std::atomic<int> completedTasks(0);    //用于跟踪已完成的插入任务数量
+#define TEST_COUNT  (1000000)            //测试数据量
+std::atomic<int> completedTasks(0);   //用于跟踪已完成的插入任务数量
 std::condition_variable cv;              //线程池任务完成信号量
 std::mutex mtx_task;                     //线程池任务互斥锁
 
 SkipList<int, std::string> skipList(18);    //实例化跳表对象，根据传入参数确定跳表最大层级
 
 void insertElement(int tid) {
-    //std::cout << tid << std::endl;
     int tmp = TEST_COUNT/NUM_THREADS;   //计算每个线程插入操作次数
     for (int i=tid*tmp, count=0; count<tmp; i++) {
         count++;
@@ -32,8 +31,6 @@ void insertElement(int tid) {
 }
 
 void getElement(int tid) {
-    //std::cout << tid << std::endl;
-
     int tmp = TEST_COUNT/NUM_THREADS;   //计算每个线程搜索操作次数
     for (int i=tid*tmp, count=0; count<tmp; i++) {
         count++;
@@ -72,6 +69,7 @@ void insert_test(){
     std::cout << "insert elapsed: " << elapsed.count() << "\n";
     std::cout << " Insert QPS:" << (TEST_COUNT/10000)/elapsed.count() << "w" << "\n";
 }
+
 void search_test(){
     srand(time(NULL));
     std::vector<std::thread> threads;
@@ -100,6 +98,7 @@ void search_test(){
     std::cout << "search elapsed: " << elapsed.count() << "\n";
     std::cout << " Search QPS:" << (TEST_COUNT/10000)/elapsed.count() << "w" << "\n";
 }
+
 void usual_use(){
     //实例化跳表对象 设定最大层级
     SkipList<int, std::string> skipList_implement(16);
@@ -141,6 +140,7 @@ void usual_use(){
     //显示跳表
     skipList_implement.display_list();
 }
+
 int main() {
     insert_test();          //随机写入测试，计算QPS
     //completedTasks = 0;   //重置计数器
