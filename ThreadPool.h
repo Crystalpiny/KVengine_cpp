@@ -35,7 +35,8 @@ private:
     std::condition_variable condition;      //任务队列为空，工作线程等待条件变量同志，有新的任务加入时被唤醒
     bool stop;                              //指示线程池是否停止，true表示线程池停止
 };
-// the constructor just launches some amount of workers
+
+//构造函数仅启动一定数量的工作线程
 inline ThreadPool::ThreadPool(size_t threads)
     :   stop(false)
 {
