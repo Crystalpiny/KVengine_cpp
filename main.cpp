@@ -9,8 +9,8 @@
 #include "skiplist.h"
 #include "ThreadPool.h"
 
-#define NUM_THREADS 16                   //线程数量
-#define TEST_COUNT 10000000              //测试数据量
+#define NUM_THREADS (16)                 //线程数量
+#define TEST_COUNT  (10000000)           //测试数据量
 std::atomic<int> completedTasks(0);    //用于跟踪已完成的插入任务数量
 std::condition_variable cv;              //线程池任务完成信号量
 std::mutex mtx_task;                     //线程池任务互斥锁
