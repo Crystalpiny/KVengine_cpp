@@ -16,8 +16,8 @@
 
 #define STORE_FILE "store/dumpFile" // 宏定义数据持久化文件路径和文件名
 
-std::mutex mtx;     // 互斥锁，保护临界区资源
-std::string delimiter = ":";    //  键值对之间的分隔符
+extern std::mutex mtx;     // 互斥锁，保护临界区资源
+extern std::string delimiter;    //  键值对之间的分隔符
 
 // 模板类 Node
 template<typename K, typename V>

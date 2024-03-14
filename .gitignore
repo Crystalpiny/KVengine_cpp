@@ -1,4 +1,7 @@
 cmake-build-debug/
 .idea/
-cmake-build-debug/
 main.exe
+build/
+cmake-build-debug-mingw/
+CMakeSettings.json
+cmake-build-debug/
