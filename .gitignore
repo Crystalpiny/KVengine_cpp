@@ -5,3 +5,4 @@ build/
 cmake-build-debug-mingw/
 CMakeSettings.json
 cmake-build-debug/
+skiplist.exe
