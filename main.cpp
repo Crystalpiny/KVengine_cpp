@@ -9,11 +9,11 @@
 #include "skiplist.h"
 #include "ThreadPool.h"
 
-#define NUM_THREADS (16)                 //线程数量
-#define TEST_COUNT  (1000000)            //测试数据量
-std::atomic<int> completedTasks(0);   //用于跟踪已完成的插入任务数量
-std::condition_variable cv;              //线程池任务完成信号量
-std::mutex mtx_task;                     //线程池任务互斥锁
+#define NUM_THREADS (16)                    //线程数量
+#define TEST_COUNT  (1000000)             //测试数据量
+std::atomic<int> completedTasks(0);         //用于跟踪已完成的插入任务数量
+std::condition_variable cv;                      //线程池任务完成信号量
+std::mutex mtx_task;                             //线程池任务互斥锁
 
 SkipList<int, std::string> skipList(18);    //实例化跳表对象，根据传入参数确定跳表最大层级
 
