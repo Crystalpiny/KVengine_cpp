@@ -1,8 +1,7 @@
-cmake-build-debug/
 .idea/
 main.exe
 build/
 cmake-build-debug-mingw/
 CMakeSettings.json
-cmake-build-debug/
 skiplist.exe
+cmake-build-debug/

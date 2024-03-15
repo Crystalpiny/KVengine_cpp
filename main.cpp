@@ -12,12 +12,14 @@ int main() {
     switch (choice)
     {
     case 1:
+        // 进入benchmark测试框架
+        init_benchmark_data();
         insert_test();      // 进行插入测试,测试QPS.
         search_test();      // 进行搜索测试,测试QPS.
-        usual_use();        // 函数接口效果测试.
+        // usual_use();        // 函数接口效果测试.
         break;
     case 2:
-        // 调用其他功能
+        // 进入命令识别模式
         break;
     default:
         std::cout << "无效选项。" << std::endl;
