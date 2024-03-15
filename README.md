@@ -60,7 +60,7 @@ PS：线程池的实现是我在Jakob Progsch, Václav Zeman实现的线程池�
 
 - search_test	随机读取测试，获取QPS
 
-- usual_use	   skiplist函数接口使用
+- skiplist_usual_use	   skiplist函数接口使用
 
 ## 存储引擎性能量化
 
@@ -115,7 +115,7 @@ int main() {
     insert_test();  //  随机写入测试，计算QPS
     //completedTasks = 0;  // 重置计数器
     search_test();  //  随机读取测试，计算QPS
-    //usual_use();    //  函数接口使用
+    //skiplist_usual_use();    //  函数接口使用
     return 0;
 }
 ```

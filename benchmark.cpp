@@ -127,7 +127,7 @@ void search_test()
               << "\n";
 }
 
-void usual_use()
+void skiplist_usual_use()
 {
     // 实例化跳表对象 设定最大层级
     SkipList<int, std::string> skipList_implement(16);
@@ -168,4 +168,11 @@ void usual_use()
     std::cout << "skipList size:" << skipList_implement.size() << std::endl;
     // 显示跳表
     skipList_implement.display_list();
+}
+
+void skiplist_benchmark()
+{
+    init_benchmark_data();
+    insert_test();      // 进行插入测试,测试QPS.
+    search_test();      // 进行搜索测试,测试QPS.
 }

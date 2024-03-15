@@ -13,7 +13,7 @@ int main() {
     case 1:
         insert_test();      // 进行插入测试,测试QPS.
         search_test();      // 进行搜索测试,测试QPS.
-        usual_use();        // 函数接口效果测试.
+        skiplist_usual_use();        // 函数接口效果测试.
         break;
     case 2:
         // 调用其他功能
