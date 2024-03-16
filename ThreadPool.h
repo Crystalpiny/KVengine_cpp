@@ -11,26 +11,49 @@
 #include <functional>
 #include <stdexcept>
 
+/**
+ * @brief 线程池类，用于管理和调度多个工作线程执行任务。
+ */
 class ThreadPool {
 public:
-    //  禁止对ThreadPool类 拷贝 移动
+    // 删除拷贝和移动构造函数以及拷贝和移动赋值运算符
     ThreadPool(const ThreadPool&) = delete;
     ThreadPool& operator=(const ThreadPool&) = delete;
     ThreadPool(const ThreadPool&&) = delete;
     ThreadPool& operator=(const ThreadPool&&) = delete;
-    ThreadPool(size_t);                 //构造函数，size_t表示线程池中线程数量
-    //成员函数模板
+
+    /**
+     * @brief 构造一个新的线程池对象
+     * 
+     * @param threads 线程数目
+     */
+    ThreadPool(size_t);
+    
+    /**
+     * @brief 将函数及其参数加入线程池的任务队列中并返回与任务关联的 future 对象
+     * 
+     * @tparam F 函数类型
+     * @tparam Args 参数类型
+     * @param f 要执行的函数
+     * @param args 函数参数
+     * @return std::future<typename std::result_of<F(Args...)>::type> 与任务关联的 future 对象，用于获取任务的结果
+     */
     template<class F, class... Args>    //可变参数模板函数。F是可调用对象的类型，Args 是参数包的类型
     auto enqueue(F&& f, Args&&... args)
         -> std::future<typename std::result_of<F(Args...)>::type>;  //std::future对象，获取任务的返回值。 std::result_of表示对象F在给定参数Args...下具体的返回类型
+
+    /**
+     * @brief 线程池析构函数
+     * 
+     */
     ~ThreadPool();
 private:
-    // need to keep track of threads so we can join them
+    // 需要确保对线程资源的追踪，以确保能正确的回收它们
     std::vector< std::thread > workers; //存储线程对象的容器
-    // the task queue
+    // 任务队列
     std::queue< std::function<void()> > tasks;  //任务队列，存储待执行的任务，外部调用enqueue()函数添加任务，任务被加入到该队列
     
-    // synchronization
+    // 线程池的同步机制
     std::mutex queue_mutex;                 //互斥锁，保护任务队列的访问
     std::condition_variable condition;      //任务队列为空，工作线程等待条件变量同志，有新的任务加入时被唤醒
     bool stop;                              //指示线程池是否停止，true表示线程池停止

@@ -19,22 +19,61 @@
 extern std::mutex mtx;           // 互斥锁，保护临界区资源
 extern std::string delimiter;    //  键值对之间的分隔符
 
-// 模板类 Node
+/**
+ * @brief 模板类 Node，表示跳表的节点
+ * 
+ * @tparam K 键类型
+ * @tparam V 值类型
+ */
 template<typename K, typename V>
 class Node {
 
 public:
 
-    Node() {}   //  默认构造函数
+    /**
+     * @brief 默认构造函数
+     * 
+     * 创建一个空节点。
+     */
+    Node() {}
 
+    /**
+     * @brief 有参构造函数
+     * 
+     * 使用给定的键、值和层级创建一个节点。
+     * 
+     * @param k 节点的键
+     * @param v 节点的值
+     * @param level 节点的层级
+     */
     Node(K k, V v, int);    //  有参构造函数
 
+    /**
+     * @brief 析构函数
+     * 
+     * 删除节点的指针数组，确保释放内存。
+     */
     ~Node();    //  析构函数
 
+    /**
+     * @brief 获取节点的键
+     * 
+     * @return K 节点的键
+     */
     K get_key() const;  //  获取键
 
+    /**
+     * @brief 获取节点的值
+     * 
+     * @return V 节点的值
+     */
     V get_value() const;    //  获取值
 
+    /**
+     * @brief 设置节点的值
+     * 
+     * @param value 要设置的值
+     */
     void set_value(V);  //  设定值
 
     //  指向下一节点的指针数组
