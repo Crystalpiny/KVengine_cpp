@@ -123,23 +123,127 @@ void Node<K, V>::set_value(V value) {
     this->value=value;
 };
 
-// 模板类 跳表
-// 键值中的key用int型，如果用其他类型，需要自定义比较函数，同时需要修改skipList.load_file函数
+/**
+ * @brief 模板类跳表数据结构
+ * 
+ * SkipList 类是一个实现了跳表功能的数据结构，用于高效地存储和检索键值对元素。
+ * 跳表是一种随机化数据结构，具有类似于平衡树的性能，但实现更加简单。
+ * 
+ * @tparam K 键的类型
+ * @tparam V 值的类型
+ * 
+ * @note    键值中的key用int型，如果用其他类型，需要自定义比较函数，同时需要修改skipList.load_file函数
+ */
 template <typename K, typename V>
 class SkipList {
 
 public:
-    SkipList(int);  //  构造函数，接受一个整数参数作为最大层级数
-    ~SkipList();    //  析构函数，销毁skiplist类实例对象
-    int get_random_level();    //  随机生成层数
-    Node<K, V>* create_node(K, V, int);    //   创建节点，接受键、值、层数
-    int insert_element(K, V);   //  插入元素
-    void display_list();        //显示跳表
-    bool search_element(K);     //  依靠键 搜索元素
-    void delete_element(K);     //  依靠键 删除元素
-    void dump_file();           //  数据持久化
-    void load_file();           //  从文件加载跳表数据
-    int size();                 //  跳表元素数量
+
+    /**
+     * @brief 构造函数：创建新的跳表对象
+     * 
+     * 构造一个新的跳表对象，指定跳表的最大层级数，并初始化跳表的各项属性。
+     * 
+     * @param max_level 跳表的最大层级数
+     */
+    SkipList(int);
+
+    /**
+     * @brief 销毁跳表对象
+     * 
+     * 清理跳表对象的资源，包括关闭文件流并释放所有节点所占用的内存。
+     * 
+     * 析构函数，销毁skiplist类实例对象。
+     * 
+     * 注意：调用该函数将会导致跳表对象及其所有节点被销毁，不再可用。
+     */
+    ~SkipList();
+
+    /**
+     * @brief 获取随机层级
+     * 
+     * 根据跳表的随机性质，生成一个随机层级数，用于新节点的插入。
+     * 
+     * @return 返回生成的随机层级数
+     */
+    int get_random_level();
+
+    /**
+     * @brief 创建一个节点对象
+     * 
+     * 创建一个新的节点对象，用于在跳表中存储键值对元素。
+     * 
+     * @param k 节点的键
+     * @param v 节点的值
+     * @param level 节点的层级（高度）
+     * @return 返回指向新创建的节点对象的指针
+     */
+    Node<K, V>* create_node(K, V, int);
+
+    /**
+     * @brief 向跳表中插入新的键值对元素
+     * 
+     * 从跳表的顶层开始查找插入位置，并逐层向下查找，找到需要插入的位置后进行插入操作。
+     * 如果插入的键已存在于跳表中，则不执行插入操作。
+     * 
+     * @param key 要插入的键
+     * @param value 要插入的值
+     * @return 如果成功插入元素，则返回 0；如果元素已存在于跳表中，则返回 1
+     */
+    int insert_element(K, V);
+
+    /**
+     * @brief 显示跳表的内容
+     * 
+     * 打印跳表的每一层级的节点键值对。
+     */
+    void display_list();
+
+    /**
+     * @brief 搜索指定键的元素是否存在于跳表中
+     * 
+     * @param key 要搜索的键
+     * @return 如果跳表中存在指定键的元素，则返回 true；否则返回 false
+     */
+    bool search_element(K);
+
+    /**
+     * @brief 从跳表中删除指定键的元素
+     * 
+     * @param key 要删除的键
+     */
+    void delete_element(K);
+
+    /**
+     * @brief 将内存中的数据持久化到本地磁盘文件中
+     * 
+     * 遍历跳表并将其中的键值对写入文件中，用于数据持久化。
+     */
+    void dump_file();
+
+    /**
+     * @brief 从文件加载数据到跳表中
+     * 
+     * 打开指定文件并从中读取数据，将键值对插入到跳表中。
+     */
+    void load_file();
+
+    /**
+     * @brief 返回跳表中元素的数量
+     * 
+     * @return 返回跳表中元素的数量
+     */
+    int size();
+
+    /**
+     * @brief 清空跳表
+     * 
+     * 清空跳表中的所有节点，并重置跳表的状态。
+     * 
+     * @tparam K 键的类型
+     * @tparam V 值的类型
+     */
+    void clear();
 
 private:
     void get_key_value_from_string(const std::string& str, std::string* key, std::string* value);   //  从字符串提取键值对
@@ -278,10 +382,14 @@ void SkipList<K, V>::load_file() {
 
     _file_reader.open(STORE_FILE);
     std::cout << "load_file-----------------" << std::endl;
-    std::string line;       //  保存从文件中读取的数据
+    //  保存从文件中读取的数据
+    std::string line;
+
     /*std::string* key = new std::string();
     std::string* value = new std::string();*/
-    std::unique_ptr<std::string> key(new std::string());    //  使用智能指针管理，防止内存泄露
+
+    //  使用智能指针管理，防止内存泄露
+    std::unique_ptr<std::string> key(new std::string());
     std::unique_ptr<std::string> value(new std::string());
     //  逐行读取文件的内容
     while (getline(_file_reader, line)) {
@@ -293,9 +401,11 @@ void SkipList<K, V>::load_file() {
         insert_element(*key, *value);
         std::cout << "key:" << *key << "value:" << *value << std::endl;
     }
+
     /*//  释放临时申请的内存
     delete key;
     delete value;*/
+
     //关闭文件输入流
     _file_reader.close();
 }
@@ -444,5 +554,25 @@ int SkipList<K, V>::get_random_level(){
     k = (k < _max_level) ? k : _max_level;  // 将层级数限制在 _max_level 范围内
     return k;
 };
+
+template <typename K, typename V>
+void SkipList<K, V>::clear() {
+    // 遍历跳表的每一层，从最底层开始
+    Node<K, V>* current = _header->forward[0];
+    while (current != nullptr) {
+        Node<K, V>* temp = current;
+        current = current->forward[0]; // 移动到下一个节点
+        delete temp; // 删除当前节点
+    }
+
+    // 重置头节点的每一层指向
+    for (int i = 0; i < _max_level; ++i) {
+        _header->forward[i] = nullptr;
+    }
+
+    // 重置跳表的当前层级和元素计数
+    _skip_list_level = 0; // 假设跳表初始化时至少有一层
+    _element_count = 0;
+}
 
 #endif //KVENGINE_SKIPLIST_H

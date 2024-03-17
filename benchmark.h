@@ -9,8 +9,10 @@
  * 该函数从标准输入中读取线程数量和测试数据量的值，并将它们分别赋给全局变量 THREAD_NUM 和 TEST_DATANUM。
  * 
  * @note 线程数量的最大值通常为16。
+ * 
+ * @return 返回指向 SkipList<int, std::string> 对象的 std::unique_ptr
  */
-void init_benchmark_data();
+std::unique_ptr<SkipList<int, std::string>> init_benchmark_data();
 
 /**
  * @brief 向跳表中插入元素。

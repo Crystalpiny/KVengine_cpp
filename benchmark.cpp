@@ -15,21 +15,31 @@ std::string delimiter = ":";    //  键值对之间的分隔符
 
 int THREAD_NUM;      // 线程数量
 int TEST_DATANUM;    // 测试的数据量
+int MAX_LEVEL;       // 跳表的最大层数
+
 std::atomic<int> completedTasks(0); // 用于跟踪已完成的插入任务数量
 std::condition_variable cv;         // 线程池任务完成信号量
 std::mutex mtx_task;                // 线程池任务互斥锁
 
-void init_benchmark_data()
+std::unique_ptr<SkipList<int, std::string>> init_benchmark_data()
 {
     // 从标准输入中读取线程数量和测试数据量的值，并赋给全局变量 THREAD_NUM 和 TEST_DATANUM
-    std::cout << "请输入线程数量(通常最大值为16)：";
+    std::cout << "请输入线程数量(通常最大值为16) :";
     std::cin >> THREAD_NUM;
 
     int data_input;
     std::cout << "请输入测试的数据量（百万）：";
     std::cin >> data_input;
+
     // 将用户输入的百万单位转换为实际的数据量
     TEST_DATANUM = data_input * MULTI_NUM_FOR_INPUT;
+
+    std::cout << "请输入跳表的最大层级(推荐设为18) :";
+    std::cin >> MAX_LEVEL;
+
+    // 可以根据传入参数确定跳表最大层级
+    // 使用make_unique创建智能指针
+    return std::make_unique<SkipList<int, std::string>>(MAX_LEVEL);
 }
 
 SkipList<int, std::string> skipList(18); // 实例化跳表对象，根据传入参数确定跳表最大层级
@@ -67,7 +77,7 @@ void getElement(int tid)
 
 void insert_test()
 {
-    srand(time(NULL));
+    srand(time(nullptr));
     // 创建线程池对象
     ThreadPool pool(THREAD_NUM);
     // std::vector<std::thread> threads;
@@ -96,7 +106,7 @@ void insert_test()
 
 void search_test()
 {
-    srand(time(NULL));
+    srand(time(nullptr));
     std::vector<std::thread> threads;
     // ThreadPool pool(THREAD_NUM);
     auto start = std::chrono::high_resolution_clock::now();
@@ -172,7 +182,23 @@ void skiplist_usual_use()
 
 void skiplist_benchmark()
 {
-    init_benchmark_data();
+    // 使用智能指针来管理动态分配的内存，帮助避免内存泄漏。
+    std::unique_ptr<SkipList<int, std::string>> skipList = init_benchmark_data();
+
+    if (skipList->size() > 0)
+    {
+        std::cout << "检测到跳表中已存在数据，正在清除..." << std::endl;
+        // 清除跳表中的所有元素
+        skipList->clear();
+        std::cout << "数据清除完毕，开始新的基准测试..." << std::endl;
+    }
+    else
+    {
+        std::cout << "跳表的元素个数： " << skipList->size() << std::endl;
+        std::cout << "跳表为空，开始新的基准测试..." << std::endl;
+    }
+
     insert_test();      // 进行插入测试,测试QPS.
     search_test();      // 进行搜索测试,测试QPS.
+
 }
