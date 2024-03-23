@@ -556,7 +556,8 @@ int SkipList<K, V>::get_random_level(){
 };
 
 template <typename K, typename V>
-void SkipList<K, V>::clear() {
+void SkipList<K, V>::clear()
+{
     // 遍历跳表的每一层，从最底层开始
     Node<K, V>* current = _header->forward[0];
     while (current != nullptr) {

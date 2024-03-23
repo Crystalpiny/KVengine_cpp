@@ -42,40 +42,48 @@ std::unique_ptr<SkipList<int, std::string>> init_benchmark_data()
     return std::make_unique<SkipList<int, std::string>>(MAX_LEVEL);
 }
 
-SkipList<int, std::string> skipList(18); // 实例化跳表对象，根据传入参数确定跳表最大层级
-
-void insertElement(int tid)
+void insertElement(std::unique_ptr<SkipList<int, std::string>> &skipList, int tid)
 {
-    int tmp = TEST_DATANUM / THREAD_NUM; // 计算每个线程插入操作次数
+    // 计算每个线程插入操作次数
+    int tmp = TEST_DATANUM / THREAD_NUM; 
     for (int i = tid * tmp, count = 0; count < tmp; i++)
     {
         count++;
-        skipList.insert_element(rand() % TEST_DATANUM, "a"); // rand随机生成键，与字符串“a” 插入跳表
+        // rand随机生成键，与字符串“a” 插入跳表
+        skipList->insert_element(rand() % TEST_DATANUM, "a");
     }
-    completedTasks++; // 插入任务完成，增加计数器的值
+
+    // 插入任务完成，增加计数器的值
+    completedTasks++; 
     if (completedTasks == THREAD_NUM)
     {
         std::unique_lock<std::mutex> lock(mtx_task);
-        cv.notify_all(); // 通知唤醒等待的线程
+        // 通知唤醒等待的线程
+        cv.notify_all(); 
     }
 }
 
-void getElement(int tid)
+void getElement(std::unique_ptr<SkipList<int, std::string>> &skipList, int tid)
 {
     int tmp = TEST_DATANUM / THREAD_NUM; // 计算每个线程搜索操作次数
     for (int i = tid * tmp, count = 0; count < tmp; i++)
     {
         count++;
-        skipList.search_element(rand() % TEST_DATANUM); // rand随机生成键，在跳表进行 搜索操作
+        // rand随机生成键，在跳表进行 搜索操作
+        skipList->search_element(rand() % TEST_DATANUM); 
     }
-    //    completedTasks++;  //搜索任务完成，增加计数器的值
-    //    if (completedTasks == THREAD_NUM) {
-    //        std::unique_lock<std::mutex> lock(mtx_task);
-    //        cv.notify_all();  //通知唤醒等待的线程
-    //    }
+
+    //搜索任务完成，增加计数器的值
+    completedTasks++;
+    if (completedTasks == THREAD_NUM)
+    {
+        std::unique_lock<std::mutex> lock(mtx_task);
+        //通知唤醒等待的线程
+        cv.notify_all();
+    }
 }
 
-void insert_test()
+void insert_test(std::unique_ptr<SkipList<int, std::string>>& skipList)
 {
     srand(time(nullptr));
     // 创建线程池对象
@@ -91,7 +99,7 @@ void insert_test()
     //    }
     for (int i = 0; i < THREAD_NUM; i++)
     {
-        pool.enqueue(insertElement, i); // 提交插入任务给线程池
+        pool.enqueue(insertElement, std::ref(skipList), i); // 提交插入任务给线程池
     }
     // 等待所有任务执行完毕
     std::unique_lock<std::mutex> lock(mtx_task);
@@ -104,37 +112,62 @@ void insert_test()
               << "\n";
 }
 
-void search_test()
+void search_test(std::unique_ptr<SkipList<int, std::string>>& skipList)
 {
     srand(time(nullptr));
-    std::vector<std::thread> threads;
-    // ThreadPool pool(THREAD_NUM);
+    // std::vector<std::thread> threads;
+    ThreadPool pool(THREAD_NUM);
     auto start = std::chrono::high_resolution_clock::now();
 
+    // for (int i = 0; i < THREAD_NUM; i++)
+    // {
+    //     // std::cout << "main(): 正在创建线程 " << i << std::endl;
+    //     threads.emplace_back(getElement, i);
+    // }
+
+    // for (auto &thread : threads)
+    // {
+    //     thread.join();
+    // }
     for (int i = 0; i < THREAD_NUM; i++)
     {
-        // std::cout << "main(): creating thread, " << i << std::endl;
-        threads.emplace_back(getElement, i);
+        // 提交搜索任务给线程池
+        pool.enqueue(getElement, std::ref(skipList), i);
     }
-
-    for (auto &thread : threads)
-    {
-        thread.join();
-    }
-    //    for (int i = 0; i < THREAD_NUM; i++) {
-    //        pool.enqueue(getElement, i);  //提交搜索任务给线程池
-    //    }
-    //
-    //    //等待所有任务执行完毕
-    //    std::unique_lock<std::mutex> lock(mtx_task);
-    //    cv.wait(lock, [&]() {
-    //        return completedTasks == THREAD_NUM;
-    //    });
+    
+    //等待所有任务执行完毕
+    std::unique_lock<std::mutex> lock(mtx_task);
+    cv.wait(lock, [&]() {
+        return completedTasks == THREAD_NUM;
+    });
     auto finish = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = finish - start;
     std::cout << "search elapsed: " << elapsed.count() << "\n";
     std::cout << " Search QPS:" << (TEST_DATANUM / 10000) / elapsed.count() << "w"
               << "\n";
+}
+
+void skiplist_benchmark()
+{
+    // 使用智能指针来管理动态分配的内存，帮助避免内存泄漏。
+    std::unique_ptr<SkipList<int, std::string>> skipList = init_benchmark_data();
+
+    if (skipList->size() > 0)
+    {
+        std::cout << "检测到跳表中已存在数据，正在清除..." << std::endl;
+        // 清除跳表中的所有元素
+        skipList->clear();
+        std::cout << "数据清除完毕，开始新的基准测试..." << std::endl;
+    }
+    else
+    {
+        std::cout << "跳表的元素个数： " << skipList->size() << std::endl;
+        std::cout << "跳表为空，开始新的基准测试..." << std::endl;
+    }
+
+    insert_test(skipList);      // 进行插入测试,测试QPS.
+    completedTasks = 0;                     // 重置计数器
+    search_test(skipList);      // 进行搜索测试,测试QPS.
 }
 
 void skiplist_usual_use()
@@ -178,27 +211,4 @@ void skiplist_usual_use()
     std::cout << "skipList size:" << skipList_implement.size() << std::endl;
     // 显示跳表
     skipList_implement.display_list();
-}
-
-void skiplist_benchmark()
-{
-    // 使用智能指针来管理动态分配的内存，帮助避免内存泄漏。
-    std::unique_ptr<SkipList<int, std::string>> skipList = init_benchmark_data();
-
-    if (skipList->size() > 0)
-    {
-        std::cout << "检测到跳表中已存在数据，正在清除..." << std::endl;
-        // 清除跳表中的所有元素
-        skipList->clear();
-        std::cout << "数据清除完毕，开始新的基准测试..." << std::endl;
-    }
-    else
-    {
-        std::cout << "跳表的元素个数： " << skipList->size() << std::endl;
-        std::cout << "跳表为空，开始新的基准测试..." << std::endl;
-    }
-
-    insert_test();      // 进行插入测试,测试QPS.
-    search_test();      // 进行搜索测试,测试QPS.
-
 }

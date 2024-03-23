@@ -15,36 +15,34 @@
 std::unique_ptr<SkipList<int, std::string>> init_benchmark_data();
 
 /**
- * @brief 向跳表中插入元素。
+ * @brief 插入元素到跳表中的线程函数。
  * 
- * 该函数根据给定的线程标识符向跳表中插入元素。
- * 
- * @param tid 线程标识符，用于确定插入操作的范围。
+ * @param skipList 跳表对象的智能指针。
+ * @param tid 当前线程的标识符。
  */
-void insertElement(int tid);
+void insertElement(std::unique_ptr<SkipList<int, std::string>> &skipList, int tid);
 
 /**
- * @brief 从跳表中获取元素。
+ * @brief 从跳表中搜索元素的线程函数。
  * 
- * 该函数根据给定的线程标识符从跳表中搜索元素。
- * 
- * @param tid 线程标识符，用于确定搜索操作的范围。
+ * @param skipList 跳表对象的智能指针。
+ * @param tid 当前线程的标识符。
  */
-void getElement(int tid);
+void getElement(std::unique_ptr<SkipList<int, std::string>> &skipList, int tid);
 
 /**
- * @brief 执行插入测试。
+ * @brief 执行插入测试的函数。
  * 
- * 该函数用于执行插入测试，向跳表中插入数据，并计算插入操作的耗时和每秒插入的元素数量。
+ * @param skipList 跳表对象的智能指针，用于插入操作。
  */
-void insert_test();
+void insert_test(std::unique_ptr<SkipList<int, std::string>>& skipList);
 
 /**
- * @brief 执行搜索测试。
+ * @brief 执行搜索测试的函数。
  * 
- * 该函数用于执行搜索测试，从跳表中搜索数据，并计算搜索操作的耗时和每秒搜索的元素数量。
+ * @param skipList 跳表对象的智能指针，用于搜索操作。
  */
-void search_test();
+void search_test(std::unique_ptr<SkipList<int, std::string>>& skipList);
 
 /**
  * @brief 典型的跳表使用示例。
@@ -59,5 +57,4 @@ void skiplist_usual_use();
  * 该函数执行跳表的性能基准测试，包括插入和搜索测试，并输出测试结果。
  */
 void skiplist_benchmark();
-
 #endif // BENCHMARK_H
