@@ -36,27 +36,66 @@ std::mt19937& getThreadLocalMt19937()
     return gen;
 }
 
-void skiplist_benchmark()
+void printTestModeSelection()
 {
-    // 使用智能指针来管理动态分配的内存，帮助避免内存泄漏。
-    std::unique_ptr<SkipList<int, std::string>> skipList = init_benchmark_data();
+    std::cout << "\n=============================\n";
+    std::cout << "  请选择测试模式:\n";
+    std::cout << "  1. 线程池\n";
+    std::cout << "  2. 多线程\n";
+    std::cout << "=============================\n";
+    std::cout << "请输入选项: ";
+}
 
+void prepareSkipListForBenchmark(std::unique_ptr<SkipList<int, std::string>>& skipList)
+{
     if (skipList->size() > 0)
     {
         std::cout << "检测到跳表中已存在数据，正在清除..." << std::endl;
-        // 清除跳表中的所有元素
         skipList->clear();
         std::cout << "数据清除完毕，开始新的基准测试..." << std::endl;
     }
     else
     {
-        std::cout << "跳表的元素个数： " << skipList->size() << std::endl;
         std::cout << "跳表为空，开始新的基准测试..." << std::endl;
     }
+}
 
-    insert_test(skipList);      // 进行插入测试,测试QPS.
-    completedTasks = 0;                     // 重置计数器
-    search_test(skipList);      // 进行搜索测试,测试QPS.
+void skiplist_benchmark()
+{
+    std::unique_ptr<SkipList<int, std::string>> skipList = init_benchmark_data();
+
+    int testMode = 0;
+    while (true)
+    {
+        printTestModeSelection();
+        std::cin >> testMode;
+        if (std::cin.fail() || (testMode != 1 && testMode != 2))
+        {
+            std::cout << "无效选项，请重新输入。\n";
+            std::cin.clear();
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            continue;
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    prepareSkipListForBenchmark(skipList);
+
+    if (1 == testMode)
+    {
+        insert_test_threadpool(skipList);
+        completedTasks = 0; // 重置计数器
+        search_test_threadpool(skipList);
+    }
+    else if
+    (2 == testMode) {
+        insert_test_multithread(skipList);
+        completedTasks = 0; // 重置计数器
+        search_test_multithread(skipList);
+    }
 }
 
 std::unique_ptr<SkipList<int, std::string>> init_benchmark_data()
@@ -129,68 +168,84 @@ void getElement(std::unique_ptr<SkipList<int, std::string>> &skipList, int tid)
     }
 }
 
-void insert_test(std::unique_ptr<SkipList<int, std::string>>& skipList)
+void insert_test_threadpool(std::unique_ptr<SkipList<int, std::string>>& skipList)
 {
-    srand(time(nullptr));
-    // 创建线程池对象
+    // ThreadPool的插入测试逻辑
     ThreadPool pool(THREAD_NUM);
-    // std::vector<std::thread> threads;
     auto start = std::chrono::high_resolution_clock::now();
-    //    for (int i = 0; i < THREAD_NUM; i++) {
-    //        //std::cout << "main(): creating thread, " << i << std::endl;
-    //        threads.emplace_back(insertElement, i);
-    //    }
-    //    for (auto &thread: threads) {
-    //        thread.join();
-    //    }
     for (int i = 0; i < THREAD_NUM; i++)
     {
-        pool.enqueue(insertElement, std::ref(skipList), i); // 提交插入任务给线程池
+        // 提交插入任务给线程池
+        pool.enqueue(insertElement, std::ref(skipList), i); 
     }
+
     // 等待所有任务执行完毕
     std::unique_lock<std::mutex> lock(mtx_task);
-    cv.wait(lock, [&]()
-            { return completedTasks == THREAD_NUM; });
+    cv.wait(lock, [&](){ return completedTasks == THREAD_NUM; });
     auto finish = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = finish - start;
-    std::cout << "insert elapsed: " << elapsed.count() << "\n";
-    std::cout << " Insert QPS:" << (TEST_DATANUM / 10000) / elapsed.count() << "w"
-              << "\n";
+    std::cout << "ThreadPool insert elapsed: " << elapsed.count() << "\n";
+    std::cout << " Insert QPS:" << (TEST_DATANUM / 10000) / elapsed.count() << "w" << "\n";
 }
 
-void search_test(std::unique_ptr<SkipList<int, std::string>>& skipList)
+void insert_test_multithread(std::unique_ptr<SkipList<int, std::string>>& skipList)
 {
-    srand(time(nullptr));
-    // std::vector<std::thread> threads;
+    // 多线程的插入测试逻辑
+    std::vector<std::thread> threads;
+    auto start = std::chrono::high_resolution_clock::now();
+    for (int i = 0; i < THREAD_NUM; i++)
+    {
+        threads.emplace_back(insertElement, std::ref(skipList), i);
+    }
+    for (auto &thread : threads)
+    {
+        thread.join();
+    }
+
+    auto finish = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed = finish - start;
+    std::cout << "Multi-thread insert elapsed: " << elapsed.count() << "\n";
+    std::cout << " Insert QPS:" << (TEST_DATANUM / 10000) / elapsed.count() << "w" << "\n";
+}
+
+void search_test_threadpool(std::unique_ptr<SkipList<int, std::string>>& skipList)
+{
+    // ThreadPool的插入测试逻辑
     ThreadPool pool(THREAD_NUM);
     auto start = std::chrono::high_resolution_clock::now();
-
-    // for (int i = 0; i < THREAD_NUM; i++)
-    // {
-    //     // std::cout << "main(): 正在创建线程 " << i << std::endl;
-    //     threads.emplace_back(getElement, i);
-    // }
-
-    // for (auto &thread : threads)
-    // {
-    //     thread.join();
-    // }
     for (int i = 0; i < THREAD_NUM; i++)
     {
         // 提交搜索任务给线程池
         pool.enqueue(getElement, std::ref(skipList), i);
     }
-    
-    //等待所有任务执行完毕
+
+    // 等待所有任务执行完毕
     std::unique_lock<std::mutex> lock(mtx_task);
-    cv.wait(lock, [&]() {
-        return completedTasks == THREAD_NUM;
-    });
+    cv.wait(lock, [&](){ return completedTasks == THREAD_NUM; });
     auto finish = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = finish - start;
-    std::cout << "search elapsed: " << elapsed.count() << "\n";
-    std::cout << " Search QPS:" << (TEST_DATANUM / 10000) / elapsed.count() << "w"
-              << "\n";
+    std::cout << "ThreadPool insert elapsed: " << elapsed.count() << "\n";
+    std::cout << " Insert QPS:" << (TEST_DATANUM / 10000) / elapsed.count() << "w" << "\n";
+}
+
+void search_test_multithread(std::unique_ptr<SkipList<int, std::string>>& skipList)
+{
+    // 多线程的插入测试逻辑
+    std::vector<std::thread> threads;
+    auto start = std::chrono::high_resolution_clock::now();
+    for (int i = 0; i < THREAD_NUM; i++)
+    {
+        threads.emplace_back(getElement, std::ref(skipList), i);
+    }
+    for (auto &thread : threads)
+    {
+        thread.join();
+    }
+
+    auto finish = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed = finish - start;
+    std::cout << "Multi-thread insert elapsed: " << elapsed.count() << "\n";
+    std::cout << " Insert QPS:" << (TEST_DATANUM / 10000) / elapsed.count() << "w" << "\n";
 }
 
 void skiplist_usual_use()
@@ -271,5 +326,4 @@ void skiplist_usual_use()
     {
         std::cerr << "An exception occurred: " << e.what() << std::endl;
     }
-
 }

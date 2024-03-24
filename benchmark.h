@@ -3,6 +3,7 @@
 
 #include <random>
 #include <cstdint>
+#include <limits>
 
 #define MULTI_NUM_FOR_INPUT (1000000)   //  用户输入数据量的乘数,简化用户操作
 
@@ -66,9 +67,43 @@ unsigned long long getSafeSeed();
 std::mt19937& getThreadLocalMt19937();
 
 /**
- * @brief 跳表性能基准测试。
+ * @brief 打印测试模式选择菜单
  * 
- * 该函数执行跳表的性能基准测试，包括插入和搜索测试，并输出测试结果。
+ * 此函数用于打印测试模式选择菜单，提供用户选择线程池或多线程的选项。
+ * 
+ * @note 
+ * - 该函数依赖 iostream 库中的 std::cout 对象进行输出。
+ * - 用户需要根据菜单提示输入相应选项。
+ * - 本函数不会处理用户输入，只负责打印菜单。
+ */
+void printTestModeSelection();
+
+/**
+ * @brief 准备跳表用于基准测试
+ * 
+ * 此函数用于准备跳表以进行基准测试。如果跳表中已存在数据，则清除数据；否则，直接开始新的基准测试。
+ * 
+ * @param skipList 跳表对象的智能指针
+ * 
+ * @note 
+ * - 该函数依赖 iostream 库中的 std::cout 对象进行输出。
+ * - 如果跳表中已存在数据，则清除所有数据并打印清除信息。
+ * - 如果跳表为空，则直接打印开始新的基准测试信息。
+ */
+void prepareSkipListForBenchmark(std::unique_ptr<SkipList<int, std::string>> &skipList);
+
+/**
+ * @brief 执行跳表基准测试
+ * 
+ * 此函数用于执行跳表的基准测试，根据用户选择的测试模式进行插入和搜索操作。
+ * 
+ * @note 
+ * - 该函数依赖 iostream 库中的 std::cout 和 std::cin 对象进行输入输出。
+ * - 调用 init_benchmark_data() 函数初始化跳表对象。
+ * - 用户需要根据打印的测试模式选择菜单输入相应选项。
+ * - 如果用户输入无效选项，会要求重新输入。
+ * - 根据用户选择的测试模式，调用相应的插入和搜索函数。
+ * - 在多线程测试模式下，会重置完成任务的计数器。
  */
 void skiplist_benchmark();
 
@@ -84,39 +119,132 @@ void skiplist_benchmark();
 std::unique_ptr<SkipList<int, std::string>> init_benchmark_data();
 
 /**
- * @brief 插入元素到跳表中的线程函数。
+ * @brief 插入元素到跳表
  * 
- * @param skipList 跳表对象的智能指针。
- * @param tid 当前线程的标识符。
+ * 此函数用于将元素插入到跳表中。每个线程负责插入一部分元素。
+ * 
+ * @param skipList 跳表对象的智能指针
+ * @param tid 线程的ID
+ * 
+ * @note 
+ * - 该函数依赖于 iostream 库和 mutex 库中的 std::cout、std::unique_lock 和 std::mutex 对象。
+ * - 根据线程的ID和总共的线程数量，计算每个线程需要执行的插入操作次数。
+ * - 每个线程通过循环执行插入操作，使用 Xorshift64 随机数生成器生成键值对。
+ * - 在插入完成后，增加计数器的值。
+ * - 当所有插入任务完成时，通过互斥锁和条件变量通知等待的线程。
  */
 void insertElement(std::unique_ptr<SkipList<int, std::string>> &skipList, int tid);
 
 /**
- * @brief 从跳表中搜索元素的线程函数。
+ * @brief 获取元素从跳表中
  * 
- * @param skipList 跳表对象的智能指针。
- * @param tid 当前线程的标识符。
+ * 此函数用于从跳表中获取元素。每个线程负责执行一部分搜索操作。
+ * 
+ * @param skipList 跳表对象的智能指针
+ * @param tid 线程的ID
+ * 
+ * @note 
+ * - 该函数依赖于 iostream 库和 mutex 库中的 std::cout、std::unique_lock 和 std::mutex 对象，以及 random 库中的 std::uniform_int_distribution 和 std::mt19937 对象。
+ * - 根据线程的ID和总共的线程数量，计算每个线程需要执行的搜索操作次数。
+ * - 每个线程通过循环执行搜索操作，使用 std::uniform_int_distribution 和 std::mt19937 生成随机键，然后在跳表中进行搜索操作。
+ * - 在搜索完成后，增加计数器的值。
+ * - 当所有搜索任务完成时，通过互斥锁和条件变量通知等待的线程。
  */
 void getElement(std::unique_ptr<SkipList<int, std::string>> &skipList, int tid);
 
 /**
- * @brief 执行插入测试的函数。
+ * @brief 使用线程池进行插入测试
  * 
- * @param skipList 跳表对象的智能指针，用于插入操作。
+ * 此函数用于使用线程池进行插入测试。多个线程同时向跳表中插入元素。
+ * 
+ * @param skipList 跳表对象的智能指针
+ * 
+ * @note 
+ * - 该函数依赖于 iostream 库中的 std::cout 对象，以及 chrono 库中的 std::chrono::high_resolution_clock、std::chrono::duration 和 std::chrono::duration::count 对象。
+ * - 创建线程池对象，并设置线程数量为 THREAD_NUM。
+ * - 获取当前时间作为插入操作开始时间。
+ * - 循环提交插入任务给线程池，每个线程负责插入一部分元素。
+ * - 等待所有任务执行完毕，使用互斥锁和条件变量实现等待机制。
+ * - 获取当前时间作为插入操作结束时间。
+ * - 计算插入操作的耗时，并输出耗时信息。
+ * - 计算插入操作的每秒执行次数（QPS）并输出。
  */
-void insert_test(std::unique_ptr<SkipList<int, std::string>>& skipList);
+void insert_test_threadpool(std::unique_ptr<SkipList<int, std::string>> &skipList);
 
 /**
- * @brief 执行搜索测试的函数。
+ * @brief 使用多线程进行插入测试
  * 
- * @param skipList 跳表对象的智能指针，用于搜索操作。
+ * 此函数用于使用多线程进行插入测试。多个线程同时向跳表中插入元素。
+ * 
+ * @param skipList 跳表对象的智能指针
+ * 
+ * @note 
+ * - 该函数依赖于 iostream 库中的 std::cout 对象，以及 chrono 库中的 std::chrono::high_resolution_clock、std::chrono::duration 和 std::chrono::duration::count 对象。
+ * - 创建线程容器，并设置容器大小为 THREAD_NUM。
+ * - 获取当前时间作为插入操作开始时间。
+ * - 循环创建线程，每个线程负责插入一部分元素。
+ * - 等待所有线程执行完毕，使用 std::thread::join() 实现等待机制。
+ * - 获取当前时间作为插入操作结束时间。
+ * - 计算插入操作的耗时，并输出耗时信息。
+ * - 计算插入操作的每秒执行次数（QPS）并输出。
  */
-void search_test(std::unique_ptr<SkipList<int, std::string>>& skipList);
+void insert_test_multithread(std::unique_ptr<SkipList<int, std::string>>& skipList);
 
 /**
- * @brief 典型的跳表使用示例。
+ * @brief 使用线程池进行搜索测试
  * 
- * 该函数演示了如何使用跳表数据结构进行插入、搜索、删除等操作，并展示了跳表的一些基本功能。
+ * 此函数用于使用线程池进行搜索测试。多个线程同时从跳表中搜索元素。
+ * 
+ * @param skipList 跳表对象的智能指针
+ * 
+ * @note 
+ * - 该函数依赖于 iostream 库中的 std::cout 对象，以及 chrono 库中的 std::chrono::high_resolution_clock、std::chrono::duration 和 std::chrono::duration::count 对象。
+ * - 创建线程池对象，并设置线程数量为 THREAD_NUM。
+ * - 获取当前时间作为搜索操作开始时间。
+ * - 循环提交搜索任务给线程池，每个线程负责搜索一部分元素。
+ * - 等待所有任务执行完毕，使用互斥锁和条件变量实现等待机制。
+ * - 获取当前时间作为搜索操作结束时间。
+ * - 计算搜索操作的耗时，并输出耗时信息。
+ * - 计算搜索操作的每秒执行次数（QPS）并输出。
+ */
+void search_test_threadpool(std::unique_ptr<SkipList<int, std::string>> &skipList);
+
+/**
+ * @brief 使用多线程进行搜索测试
+ * 
+ * 此函数用于使用多线程进行搜索测试。多个线程同时从跳表中搜索元素。
+ * 
+ * @param skipList 跳表对象的智能指针
+ * 
+ * @note 
+ * - 该函数依赖于 iostream 库中的 std::cout 对象，以及 chrono 库中的 std::chrono::high_resolution_clock、std::chrono::duration 和 std::chrono::duration::count 对象。
+ * - 创建线程容器，并设置容器大小为 THREAD_NUM。
+ * - 获取当前时间作为搜索操作开始时间。
+ * - 循环创建线程，每个线程负责搜索一部分元素。
+ * - 等待所有线程执行完毕，使用 std::thread::join() 实现等待机制。
+ * - 获取当前时间作为搜索操作结束时间。
+ * - 计算搜索操作的耗时，并输出耗时信息。
+ * - 计算搜索操作的每秒执行次数（QPS）并输出。
+ */
+void search_test_multithread(std::unique_ptr<SkipList<int, std::string>> &skipList);
+
+/**
+ * @brief 跳表的常规用法示例
+ * 
+ * 此函数用于展示跳表的常规用法示例，包括插入元素、检索元素、删除元素等操作。
+ * 
+ * @note 
+ * - 该函数依赖于 iostream 库中的 std::cout 和 std::endl 对象。
+ * - 实例化跳表对象并使用 std::unique_ptr 进行管理。
+ * - 插入一系列的键值对到跳表中。
+ * - 输出跳表的元素个数。
+ * - 将跳表的元素持久化到文件。
+ * - 根据键值进行元素检索，并输出结果。
+ * - 显示跳表的内容。
+ * - 根据键值进行元素删除。
+ * - 输出跳表的元素个数。
+ * - 再次显示跳表的内容。
+ * - 如果发生异常，将异常信息输出到标准错误流。
  */
 void skiplist_usual_use();
 
