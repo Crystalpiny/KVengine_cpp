@@ -6,13 +6,23 @@
 
 /**
  * @brief 主函数
- *        这个程序展示了一个菜单，允许用户选择执行不同的功能，直到选择退出程序。
- *        1. 进行Benchmark测试
- *        2. 其他功能
- *        3. 退出程序
- *        用户输入非法时，程序会提示重新输入。
  * 
- * @return int 返回0表示程序正常退出。
+ * 程序的入口函数，提供用户选择操作的菜单，并执行相应的功能。
+ * 
+ * @return int 返回程序的退出状态码
+ * 
+ * @note 
+ * - 该函数依赖于 iostream 库中的 std::cout、std::cin 对象，以及 system 函数和 std::numeric_limits<std::streamsize>::max()。
+ * - 使用 bool 变量 `skiplist_benchmark_executed` 标记 Benchmark 测试是否已经执行过。
+ * - 进入无限循环，直到用户选择退出程序。
+ * - 输出操作选择菜单，并接收用户输入的选项。
+ * - 检查用户输入是否为数字，如果不是，清空输入流并提示重新输入。
+ * - 使用 switch 语句根据用户选择执行相应的操作。
+ * - 如果选择 1，检查 `skiplist_benchmark_executed` 变量，如果已经执行过，提示用户并返回主菜单；否则执行 Benchmark 测试并标记已执行。
+ * - 如果选择 2，执行跳表 API 接口测试。
+ * - 如果选择 3，进入其他功能的处理。
+ * - 如果选择 4，输出退出信息并返回程序退出状态码。
+ * - 如果选择其他无效选项，提示用户重新输入。
  */
 int main()
 {
@@ -45,7 +55,7 @@ int main()
                 {
                     // 进入Benchmark测试框架，并标记Benchmark测试已执行。
                     skiplist_benchmark();
-                    skiplist_benchmark_executed = true; // 标记Benchmark测试已经执行过。
+                    skiplist_benchmark_executed = true;
                 }
                 break;
             case 2:

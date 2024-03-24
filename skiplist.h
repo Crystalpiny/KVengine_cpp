@@ -1,7 +1,3 @@
-//
-// Created by 80544 on 2023/8/26.
-//
-
 #ifndef KVENGINE_SKIPLIST_H
 #define KVENGINE_SKIPLIST_H
 
@@ -20,10 +16,12 @@ extern std::mutex mtx;           // 互斥锁，保护临界区资源
 extern std::string delimiter;    //  键值对之间的分隔符
 
 /**
- * @brief 模板类 Node，表示跳表的节点
+ * @brief 节点类
  * 
- * @tparam K 键类型
- * @tparam V 值类型
+ * 表示跳表中的一个节点。
+ * 
+ * @tparam K 键的类型
+ * @tparam V 值的类型
  */
 template<typename K, typename V>
 class Node {
