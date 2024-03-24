@@ -195,43 +195,81 @@ void search_test(std::unique_ptr<SkipList<int, std::string>>& skipList)
 
 void skiplist_usual_use()
 {
-    // 实例化跳表对象 设定最大层级
-    SkipList<int, std::string> skipList_implement(16);
-    // 写入元素
-    skipList_implement.insert_element(1, "one");
-    skipList_implement.insert_element(2, "two");
-    skipList_implement.insert_element(3, "three");
-    skipList_implement.insert_element(4, "four");
-    skipList_implement.insert_element(5, "five");
-    skipList_implement.insert_element(7, "seven");
-    skipList_implement.insert_element(8, "eight");
-    skipList_implement.insert_element(9, "nine");
-    skipList_implement.insert_element(12, "twelve");
-    skipList_implement.insert_element(17, "seventeen");
-    skipList_implement.insert_element(18, "eighteen");
-    skipList_implement.insert_element(19, "nineteen");
-    skipList_implement.insert_element(20, "twenty");
-    skipList_implement.insert_element(21, "twenty-one");
-    skipList_implement.insert_element(22, "twenty-two");
-    skipList_implement.insert_element(23, "twenty-three");
-    skipList_implement.insert_element(25, "twenty-five");
-    skipList_implement.insert_element(27, "twenty-seven");
-    // 输出跳表元素个数
-    std::cout << "skipList size:" << skipList_implement.size() << std::endl;
-    // 跳表元素持久化到文件
-    skipList_implement.dump_file();
-    // 按键值检索
-    skipList_implement.search_element(9);
-    skipList_implement.search_element(18);
-    skipList_implement.search_element(27);
-    // 显示跳表
-    skipList_implement.display_list();
-    // 按键值删除
-    skipList_implement.delete_element(3);
-    skipList_implement.delete_element(7);
-    skipList_implement.delete_element(17);
-    // 输出跳表元素个数
-    std::cout << "skipList size:" << skipList_implement.size() << std::endl;
-    // 显示跳表
-    skipList_implement.display_list();
+    try
+    {
+        // 实例化跳表对象并使用std::unique_ptr进行管理
+        std::unique_ptr<SkipList<int, std::string>> skipList_implement = std::make_unique<SkipList<int, std::string>>(16);
+
+        // 写入元素
+        skipList_implement->insert_element(1, "one");
+        skipList_implement->insert_element(2, "two");
+        skipList_implement->insert_element(3, "three");
+        skipList_implement->insert_element(4, "four");
+        skipList_implement->insert_element(5, "five");
+        skipList_implement->insert_element(7, "seven");
+        skipList_implement->insert_element(8, "eight");
+        skipList_implement->insert_element(9, "nine");
+        skipList_implement->insert_element(12, "twelve");
+        skipList_implement->insert_element(17, "seventeen");
+        skipList_implement->insert_element(18, "eighteen");
+        skipList_implement->insert_element(19, "nineteen");
+        skipList_implement->insert_element(20, "twenty");
+        skipList_implement->insert_element(21, "twenty-one");
+        skipList_implement->insert_element(22, "twenty-two");
+        skipList_implement->insert_element(23, "twenty-three");
+        skipList_implement->insert_element(25, "twenty-five");
+        skipList_implement->insert_element(27, "twenty-seven");
+
+        // 输出跳表元素个数
+        std::cout << "skipList size:" << skipList_implement->size() << std::endl;
+
+        // 跳表元素持久化到文件
+        skipList_implement->dump_file();
+
+        // 按键值检索
+        if (skipList_implement->search_element(9))
+        {
+            std::cout << "Element found. "<< std::endl;
+        }
+        else
+        {
+            std::cout << "Element not found." << std::endl;
+        }
+
+        if (skipList_implement->search_element(18))
+        {
+            std::cout << "Element found. "<< std::endl;
+        }
+        else
+        {
+            std::cout << "Element not found." << std::endl;
+        }
+        if (skipList_implement->search_element(27))
+        {
+            std::cout << "Element found. "<< std::endl;
+        }
+        else
+        {
+            std::cout << "Element not found." << std::endl;
+        }
+
+        // 显示跳表
+        skipList_implement->display_list();
+
+        // 按键值删除
+        skipList_implement->delete_element(3);
+        skipList_implement->delete_element(7);
+        skipList_implement->delete_element(17);
+
+        // 输出跳表元素个数
+        std::cout << "skipList size:" << skipList_implement->size() << std::endl;
+
+        // 显示跳表
+        skipList_implement->display_list();
+    }
+    catch(const std::exception& e)
+    {
+        std::cerr << "An exception occurred: " << e.what() << std::endl;
+    }
+
 }

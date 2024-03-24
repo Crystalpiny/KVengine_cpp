@@ -20,7 +20,7 @@ int main()
 
     while (true)  // 使用无限循环来保持程序运行，直到用户选择退出。
     {
-        std::cout << "选择操作：\n1. 进行Benchmark测试\n2. 其他功能\n3. 退出程序\n请输入选项:" << std::endl;
+        std::cout << "选择操作：\n1. 进行Benchmark测试\n2. 跳表API接口测试\n3. 其他功能\n4. 退出程序\n请输入选项:" << std::endl;
         int choice;  // 存储用户的选择。
         std::cin >> choice;  // 从标准输入读取用户的选择。
 
@@ -36,13 +36,15 @@ int main()
             case 1:
                 // 进入Benchmark测试框架。
                 skiplist_benchmark();
-
-                // skiplist_usual_use();  // 函数接口效果测试（当前被注释）。
                 break;
             case 2:
-                // 进入其他功能的处理。
+                // 进行跳表API接口测试。
+                skiplist_usual_use();
                 break;
             case 3:
+                // 进入其他功能的处理。
+                break;
+            case 4:
                 std::cout << "退出程序。" << std::endl;  // 打印退出提示。
                 return 0;  // 返回0，退出程序。
             default:
@@ -53,12 +55,3 @@ int main()
     // 实际上，这里的 return 0 是多余的，因为程序会在 case 3 中通过 return 0 退出。
     return 0;
 }
-
-// int main()
-// {
-//     insert_test(); // 随机写入测试，计算QPS
-//     // completedTasks = 0;   //重置计数器
-//     search_test(); // 随机读取测试，计算QPS
-//     // skiplist_usual_use();          //函数接口使用
-//     return 0;
-// }
