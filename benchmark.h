@@ -191,6 +191,27 @@ void insert_test_threadpool(std::unique_ptr<SkipList<int, std::string>> &skipLis
 void insert_test_multithread(std::unique_ptr<SkipList<int, std::string>>& skipList);
 
 /**
+ * @brief 插入测试函数（使用CTPL线程池）
+ * 
+ * 该函数使用CTPL线程池对给定的跳表对象执行并发插入操作的测试。
+ * 
+ * @param skipList 跳表对象的智能指针，用于进行插入操作的目标跳表。
+ * 
+ * @note
+ * 该函数通过以下步骤执行并发插入操作：
+ * - 创建一个具有预定义线程数量的CTPL线程池。
+ * - 记录插入操作开始时间。
+ * - 创建互斥锁和条件变量，用于线程同步和任务完成的跟踪。
+ * - 循环创建并提交任务到线程池，每个任务负责向跳表中插入元素。
+ * - 每个任务完成插入操作后，使用互斥锁保护共享的任务完成计数器，并通知等待的线程。
+ * - 主线程等待所有任务完成，即等待任务完成计数器达到预定义线程数量。
+ * - 记录插入操作结束时间，并计算插入操作的耗时。
+ * - 输出插入操作的耗时。
+ * - 计算并输出每秒插入的数量（QPS，每万条数据）。
+ */ 
+void insert_test_ctpl(std::unique_ptr<SkipList<int, std::string>> &skipList);
+
+/**
  * @brief 使用线程池进行搜索测试
  * 
  * 此函数用于使用线程池进行搜索测试。多个线程同时从跳表中搜索元素。
@@ -227,6 +248,27 @@ void search_test_threadpool(std::unique_ptr<SkipList<int, std::string>> &skipLis
  * - 计算搜索操作的每秒执行次数（QPS）并输出。
  */
 void search_test_multithread(std::unique_ptr<SkipList<int, std::string>> &skipList);
+
+/**
+ * @brief 搜索测试函数（使用CTPL线程池）
+ * 
+ * 该函数使用CTPL线程池对给定的跳表对象执行并发搜索操作的测试。
+ * 
+ * @param skipList 跳表对象的智能指针，用于进行搜索操作的目标跳表。
+ * 
+ * @note
+ * 该函数通过以下步骤执行并发搜索操作：
+ * - 创建一个具有预定义线程数量的CTPL线程池。
+ * - 记录搜索操作开始时间。
+ * - 创建互斥锁和条件变量，用于线程同步和任务完成的跟踪。
+ * - 循环创建并提交任务到线程池，每个任务负责在跳表中执行元素搜索。
+ * - 每个任务完成搜索操作后，使用互斥锁保护共享的任务完成计数器，并通知等待的线程。
+ * - 主线程等待所有任务完成，即等待任务完成计数器达到预定义线程数量。
+ * - 记录搜索操作结束时间，并计算搜索操作的耗时。
+ * - 输出搜索操作的耗时。
+ * - 计算并输出每秒搜索的数量（QPS，每万条数据）。
+ */ 
+void search_test_ctpl(std::unique_ptr<SkipList<int, std::string>> &skipList);
 
 /**
  * @brief 跳表的常规用法示例

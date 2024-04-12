@@ -8,6 +8,7 @@
 #include "skiplist.h"
 #include "ThreadPool.h"
 #include "benchmark.h"
+#include "ctpl_stl.h"
 
 std::mutex mtx;     // 互斥锁，保护临界区资源
 std::string delimiter = ":";    //  键值对之间的分隔符
@@ -40,8 +41,9 @@ void printTestModeSelection()
 {
     std::cout << "\n=============================\n";
     std::cout << "  请选择测试模式:\n";
-    std::cout << "  1. 线程池\n";
-    std::cout << "  2. 多线程\n";
+    std::cout << "  1. ThreadPool\n";
+    std::cout << "  2. Multi-thread\n";
+    std::cout << "  3. CTPL\n";
     std::cout << "=============================\n";
     std::cout << "请输入选项: ";
 }
@@ -69,7 +71,7 @@ void skiplist_benchmark()
     {
         printTestModeSelection();
         std::cin >> testMode;
-        if (std::cin.fail() || (testMode != 1 && testMode != 2))
+        if (std::cin.fail() || (testMode < 1 || testMode > 3))  // 更新有效选项范围
         {
             std::cout << "无效选项，请重新输入。\n";
             std::cin.clear();
@@ -84,17 +86,26 @@ void skiplist_benchmark()
 
     prepareSkipListForBenchmark(skipList);
 
-    if (1 == testMode)
+    switch (testMode)
     {
-        insert_test_threadpool(skipList);
-        completedTasks = 0; // 重置计数器
-        search_test_threadpool(skipList);
-    }
-    else if
-    (2 == testMode) {
-        insert_test_multithread(skipList);
-        completedTasks = 0; // 重置计数器
-        search_test_multithread(skipList);
+        case 1:
+            insert_test_threadpool(skipList);
+            completedTasks = 0; // 重置计数器
+            search_test_threadpool(skipList);
+            break;
+        case 2:
+            insert_test_multithread(skipList);
+            completedTasks = 0; // 重置计数器
+            search_test_multithread(skipList);
+            break;
+        case 3:
+            insert_test_ctpl(skipList);
+            completedTasks = 0; // 重置计数器
+            search_test_ctpl(skipList);
+            break;
+        default:
+            std::cout << "未知的测试模式。" << std::endl;
+            break;
     }
 }
 
@@ -185,7 +196,7 @@ void insert_test_threadpool(std::unique_ptr<SkipList<int, std::string>>& skipLis
     auto finish = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = finish - start;
     std::cout << "ThreadPool insert elapsed: " << elapsed.count() << "\n";
-    std::cout << " Insert QPS:" << (TEST_DATANUM / 10000) / elapsed.count() << "w" << "\n";
+    std::cout << "ThreadPool Insert QPS:" << (TEST_DATANUM / 10000) / elapsed.count() << "w" << "\n";
 }
 
 void insert_test_multithread(std::unique_ptr<SkipList<int, std::string>>& skipList)
@@ -205,7 +216,33 @@ void insert_test_multithread(std::unique_ptr<SkipList<int, std::string>>& skipLi
     auto finish = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = finish - start;
     std::cout << "Multi-thread insert elapsed: " << elapsed.count() << "\n";
-    std::cout << " Insert QPS:" << (TEST_DATANUM / 10000) / elapsed.count() << "w" << "\n";
+    std::cout << "Multi-thread Insert QPS:" << (TEST_DATANUM / 10000) / elapsed.count() << "w" << "\n";
+}
+
+void insert_test_ctpl(std::unique_ptr<SkipList<int, std::string>>& skipList)
+{
+    ctpl::thread_pool pool(THREAD_NUM); // 创建线程池
+    auto start = std::chrono::high_resolution_clock::now();
+    std::mutex mtx_task;
+    std::condition_variable cv;
+    int completedTasks = 0;
+
+    for (int i = 0; i < THREAD_NUM; i++) {
+        pool.push([&skipList, &mtx_task, &cv, &completedTasks, i](int) {
+            insertElement(skipList, i);
+            std::lock_guard<std::mutex> lock(mtx_task);
+            completedTasks++;
+            cv.notify_one();
+        });
+    }
+
+    // 等待所有任务执行完毕
+    std::unique_lock<std::mutex> lock(mtx_task);
+    cv.wait(lock, [&](){ return completedTasks == THREAD_NUM; });
+    auto finish = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed = finish - start;
+    std::cout << "CTPL insert elapsed: " << elapsed.count() << " seconds\n";
+    std::cout << "CTPL Insert QPS:" << (TEST_DATANUM / 10000) / elapsed.count() << "w" << "\n";
 }
 
 void search_test_threadpool(std::unique_ptr<SkipList<int, std::string>>& skipList)
@@ -225,7 +262,7 @@ void search_test_threadpool(std::unique_ptr<SkipList<int, std::string>>& skipLis
     auto finish = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = finish - start;
     std::cout << "ThreadPool insert elapsed: " << elapsed.count() << "\n";
-    std::cout << " Insert QPS:" << (TEST_DATANUM / 10000) / elapsed.count() << "w" << "\n";
+    std::cout << "ThreadPool search QPS:" << (TEST_DATANUM / 10000) / elapsed.count() << "w" << "\n";
 }
 
 void search_test_multithread(std::unique_ptr<SkipList<int, std::string>>& skipList)
@@ -245,7 +282,33 @@ void search_test_multithread(std::unique_ptr<SkipList<int, std::string>>& skipLi
     auto finish = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = finish - start;
     std::cout << "Multi-thread insert elapsed: " << elapsed.count() << "\n";
-    std::cout << " Insert QPS:" << (TEST_DATANUM / 10000) / elapsed.count() << "w" << "\n";
+    std::cout << "Multi-thread search QPS:" << (TEST_DATANUM / 10000) / elapsed.count() << "w" << "\n";
+}
+
+void search_test_ctpl(std::unique_ptr<SkipList<int, std::string>>& skipList)
+{
+    ctpl::thread_pool pool(THREAD_NUM); // 创建线程池
+    auto start = std::chrono::high_resolution_clock::now();
+    std::mutex mtx_task;
+    std::condition_variable cv;
+    int completedTasks = 0;
+
+    for (int i = 0; i < THREAD_NUM; i++) {
+        pool.push([&skipList, &mtx_task, &cv, &completedTasks, i](int) {
+            getElement(skipList, i);
+            std::lock_guard<std::mutex> lock(mtx_task);
+            completedTasks++;
+            cv.notify_one();
+        });
+    }
+
+    // 等待所有任务执行完毕
+    std::unique_lock<std::mutex> lock(mtx_task);
+    cv.wait(lock, [&](){ return completedTasks == THREAD_NUM; });
+    auto finish = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed = finish - start;
+    std::cout << "CTPL search elapsed: " << elapsed.count() << " seconds\n";
+    std::cout << "CTPL search QPS:" << (TEST_DATANUM / 10000) / elapsed.count() << "w" << "\n";
 }
 
 void skiplist_usual_use()
