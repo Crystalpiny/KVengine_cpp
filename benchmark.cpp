@@ -261,7 +261,7 @@ void search_test_threadpool(std::unique_ptr<SkipList<int, std::string>>& skipLis
     cv.wait(lock, [&](){ return completedTasks == THREAD_NUM; });
     auto finish = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = finish - start;
-    std::cout << "ThreadPool insert elapsed: " << elapsed.count() << "\n";
+    std::cout << "ThreadPool search elapsed: " << elapsed.count() << "\n";
     std::cout << "ThreadPool search QPS:" << (TEST_DATANUM / 10000) / elapsed.count() << "w" << "\n";
 }
 
@@ -281,7 +281,7 @@ void search_test_multithread(std::unique_ptr<SkipList<int, std::string>>& skipLi
 
     auto finish = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = finish - start;
-    std::cout << "Multi-thread insert elapsed: " << elapsed.count() << "\n";
+    std::cout << "Multi-thread search elapsed: " << elapsed.count() << "\n";
     std::cout << "Multi-thread search QPS:" << (TEST_DATANUM / 10000) / elapsed.count() << "w" << "\n";
 }
 
