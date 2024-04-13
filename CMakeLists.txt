@@ -21,7 +21,6 @@ set(HEADERS
         skiplist.h
         ThreadPool.h
         benchmark.h
-        ctpl.h
         ctpl_stl.h
 )
 
