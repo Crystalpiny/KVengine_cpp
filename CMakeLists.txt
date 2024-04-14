@@ -19,6 +19,8 @@ endif()
 
 # 添加 progressbar 库的头文件搜索路径
 include_directories(include/progressbar)
+# 添加 RapidJSON 库的头文件搜索路径
+include_directories(include/rapidjson)
 
 set(HEADERS
         skiplist.h
