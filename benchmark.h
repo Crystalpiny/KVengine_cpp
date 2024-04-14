@@ -8,6 +8,18 @@
 #define MULTI_NUM_FOR_INPUT (1000000)   //  用户输入数据量的乘数,简化用户操作
 
 /**
+ * @brief 读取配置文件并获取进度条使用标志。
+ * 
+ * 此函数尝试打开配置文件，并解析JSON以检索 'useProgressBar' 字段。
+ * 如果配置文件不存在、无法打开或JSON格式不正确，函数将返回false。
+ * 如果一切正常，函数将设置 'useProgressBar' 并返回true。
+ * 
+ * @param useProgressBar 一个引用布尔值，用于存储是否使用进度条的标志。
+ * @return bool 如果成功读取配置文件并获取 'useProgressBar' 字段，则返回true，否则返回false。
+ */
+bool ReadConfig(bool &useProgressBar);
+
+/**
  * @brief Xorshift64 伪随机数生成器类
  * 
  */

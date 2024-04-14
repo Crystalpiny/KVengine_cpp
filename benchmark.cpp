@@ -12,7 +12,10 @@
 #include "ThreadPool.h"
 #include "benchmark.h"
 #include "ctpl_stl.h"
+
+/* 引入外部库*/
 #include "progressbar.hpp"
+#include "document.h"
 
 std::mutex mtx;     // 互斥锁，保护临界区资源
 std::string delimiter = ":";    //  键值对之间的分隔符
@@ -25,6 +28,37 @@ std::random_device global_rd;          // 全局随机设备
 std::atomic<int> completedTasks(0); // 用于跟踪已完成的插入任务数量
 std::condition_variable cv;         // 线程池任务完成信号量
 std::mutex mtx_task;                // 线程池任务互斥锁
+
+const std::string configFilePath = "C:/SoftWare/VScode-dir/KVengine_cpp/config.json"; // 配置文件路径
+
+bool ReadConfig(bool& useProgressBar)
+{
+    std::ifstream configFile(configFilePath);
+    if (!configFile.is_open())
+    {
+        std::cerr << "Unable to open config file." << std::endl;
+        return false;
+    }
+    
+    std::string content((std::istreambuf_iterator<char>(configFile)), std::istreambuf_iterator<char>());
+    rapidjson::Document doc;
+    doc.Parse(content.c_str());
+
+    if (!doc.IsObject() || !doc.HasMember("skipListBenchmark") || !doc["skipListBenchmark"].IsObject())
+    {
+        std::cerr << "Invalid config format." << std::endl;
+        return false;
+    }
+
+    const rapidjson::Value& benchmark = doc["skipListBenchmark"];
+    if (benchmark.HasMember("useProgressBar") && benchmark["useProgressBar"].IsBool())
+    {
+        useProgressBar = benchmark["useProgressBar"].GetBool();
+        return true;
+    }
+
+    return false;
+}
 
 unsigned long long getSafeSeed()
 {
@@ -185,6 +219,12 @@ void getElement(std::unique_ptr<SkipList<int, std::string>> &skipList, int tid)
 
 void insert_test_threadpool(std::unique_ptr<SkipList<int, std::string>>& skipList)
 {
+    bool useProgressBar = false;    // 默认不显示进度条
+    if (!ReadConfig(useProgressBar))
+    {   // 如果无法读取配置文件或配置项缺失，输出错误信息并返回
+        std::cerr << "Error reading config or missing useProgressBar field." << std::endl;
+        return;
+    }
     // ThreadPool的插入测试逻辑
     ThreadPool pool(THREAD_NUM);
     std::mutex progress_mtx;
@@ -194,11 +234,12 @@ void insert_test_threadpool(std::unique_ptr<SkipList<int, std::string>>& skipLis
 
     for (int i = 0; i < THREAD_NUM; i++)
     {
+        if(!useProgressBar)
         {   /* 在无进度条模式下将任务交给线程池的方法 */
             // 提交插入任务给线程池
-            // pool.enqueue(insertElement, std::ref(skipList), i);
+            pool.enqueue(insertElement, std::ref(skipList), i);
         }
-
+        else
         {   /* 基于progress bar库的进度条*/
             pool.enqueue([&skipList, &bar, &progress_mtx, i]() {
                 insertElement(skipList, i);
@@ -225,6 +266,12 @@ void insert_test_threadpool(std::unique_ptr<SkipList<int, std::string>>& skipLis
 
 void insert_test_multithread(std::unique_ptr<SkipList<int, std::string>>& skipList)
 {
+    bool useProgressBar = false;    // 默认不显示进度条
+    if (!ReadConfig(useProgressBar))
+    {   // 如果无法读取配置文件或配置项缺失，输出错误信息并返回
+        std::cerr << "Error reading config or missing useProgressBar field." << std::endl;
+        return;
+    }
     // 多线程的插入测试逻辑
     std::vector<std::thread> threads;
     std::mutex progress_mtx;
@@ -233,9 +280,11 @@ void insert_test_multithread(std::unique_ptr<SkipList<int, std::string>>& skipLi
     auto start = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < THREAD_NUM; i++)
     {
+        if(!useProgressBar)
         {   /* 无进度条模式 */
-            // threads.emplace_back(insertElement, std::ref(skipList), i);
+            threads.emplace_back(insertElement, std::ref(skipList), i);
         }
+        else
         {   /* 基于progress bar库的进度条*/
             threads.emplace_back([&skipList, &bar, &progress_mtx, i]() {
                 insertElement(skipList, i);
@@ -261,6 +310,12 @@ void insert_test_multithread(std::unique_ptr<SkipList<int, std::string>>& skipLi
 
 void insert_test_ctpl(std::unique_ptr<SkipList<int, std::string>>& skipList)
 {
+    bool useProgressBar = false;    // 默认不显示进度条
+    if (!ReadConfig(useProgressBar))
+    {   // 如果无法读取配置文件或配置项缺失，输出错误信息并返回
+        std::cerr << "Error reading config or missing useProgressBar field." << std::endl;
+        return;
+    }
     ctpl::thread_pool pool(THREAD_NUM); // 创建线程池
     std::mutex progress_mtx;
     progressbar bar(THREAD_NUM); // 使用线程数量初始化进度条
@@ -270,16 +325,19 @@ void insert_test_ctpl(std::unique_ptr<SkipList<int, std::string>>& skipList)
     std::condition_variable cv;
     int completedTasks = 0;
 
-    for (int i = 0; i < THREAD_NUM; i++) {
+    for (int i = 0; i < THREAD_NUM; i++)
+    {
+        if(!useProgressBar)
         {   /* 无进度条模式 */
-            // pool.push([&skipList, &mtx_task, &cv, &completedTasks, i](int)
-            // {
-            //     insertElement(skipList, i);
-            //     std::lock_guard<std::mutex> lock(mtx_task);
-            //     completedTasks++;
-            //     cv.notify_one();
-            // });
+            pool.push([&skipList, &mtx_task, &cv, &completedTasks, i](int)
+            {
+                insertElement(skipList, i);
+                std::lock_guard<std::mutex> lock(mtx_task);
+                completedTasks++;
+                cv.notify_one();
+            });
         }
+        else
         {   /* 基于progress bar库的进度条*/
             pool.push([&skipList, &mtx_task, &cv, &bar, &progress_mtx, &completedTasks, i](int) {
                 insertElement(skipList, i);
@@ -308,6 +366,12 @@ void insert_test_ctpl(std::unique_ptr<SkipList<int, std::string>>& skipList)
 
 void search_test_threadpool(std::unique_ptr<SkipList<int, std::string>>& skipList)
 {
+    bool useProgressBar = false;    // 默认不显示进度条
+    if (!ReadConfig(useProgressBar))
+    {   // 如果无法读取配置文件或配置项缺失，输出错误信息并返回
+        std::cerr << "Error reading config or missing useProgressBar field." << std::endl;
+        return;
+    }
     // ThreadPool的插入测试逻辑
     ThreadPool pool(THREAD_NUM);
     std::mutex progress_mtx;
@@ -316,10 +380,12 @@ void search_test_threadpool(std::unique_ptr<SkipList<int, std::string>>& skipLis
     auto start = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < THREAD_NUM; i++)
     {
+        if(!useProgressBar)
         {   /* 无进度条模式 */
-            // // 提交搜索任务给线程池
-            // pool.enqueue(getElement, std::ref(skipList), i);
+            // 提交搜索任务给线程池
+            pool.enqueue(getElement, std::ref(skipList), i);
         }
+        else
         {   /* 基于progress bar库的进度条*/
             pool.enqueue([&skipList, &bar, &progress_mtx, i]() {
                 getElement(skipList, i);
@@ -345,6 +411,12 @@ void search_test_threadpool(std::unique_ptr<SkipList<int, std::string>>& skipLis
 
 void search_test_multithread(std::unique_ptr<SkipList<int, std::string>>& skipList)
 {
+    bool useProgressBar = false;    // 默认不显示进度条
+    if (!ReadConfig(useProgressBar))
+    {   // 如果无法读取配置文件或配置项缺失，输出错误信息并返回
+        std::cerr << "Error reading config or missing useProgressBar field." << std::endl;
+        return;
+    }
     // 多线程的插入测试逻辑
     std::vector<std::thread> threads;
     std::mutex progress_mtx;
@@ -353,9 +425,11 @@ void search_test_multithread(std::unique_ptr<SkipList<int, std::string>>& skipLi
     auto start = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < THREAD_NUM; i++)
     {
+        if(!useProgressBar)
         {   /* 无进度条模式 */
-            //threads.emplace_back(getElement, std::ref(skipList), i);
+            threads.emplace_back(getElement, std::ref(skipList), i);
         }
+        else
         {   /* 基于progress bar库的进度条*/
             threads.emplace_back([&skipList, &bar, &progress_mtx, i]() {
                 getElement(skipList, i);
@@ -381,6 +455,12 @@ void search_test_multithread(std::unique_ptr<SkipList<int, std::string>>& skipLi
 
 void search_test_ctpl(std::unique_ptr<SkipList<int, std::string>>& skipList)
 {
+    bool useProgressBar = false;    // 默认不显示进度条
+    if (!ReadConfig(useProgressBar))
+    {   // 如果无法读取配置文件或配置项缺失，输出错误信息并返回
+        std::cerr << "Error reading config or missing useProgressBar field." << std::endl;
+        return;
+    }
     ctpl::thread_pool pool(THREAD_NUM); // 创建线程池
     std::mutex progress_mtx;
     progressbar bar(THREAD_NUM); // 使用线程数量初始化进度条
@@ -392,14 +472,16 @@ void search_test_ctpl(std::unique_ptr<SkipList<int, std::string>>& skipList)
 
     for (int i = 0; i < THREAD_NUM; i++)
     {
+        if(!useProgressBar)
         {   /* 无进度条模式 */
-            // pool.push([&skipList, &mtx_task, &cv, &completedTasks, i](int) {
-            //     getElement(skipList, i);
-            //     std::lock_guard<std::mutex> lock(mtx_task);
-            //     completedTasks++;
-            //     cv.notify_one();
-            // });
+            pool.push([&skipList, &mtx_task, &cv, &completedTasks, i](int) {
+                getElement(skipList, i);
+                std::lock_guard<std::mutex> lock(mtx_task);
+                completedTasks++;
+                cv.notify_one();
+            });
         }
+        else
         {   /* 基于progress bar库的进度条*/
             pool.push([&skipList, &bar, &progress_mtx, &mtx_task, &cv, &completedTasks, i](int)
             {
