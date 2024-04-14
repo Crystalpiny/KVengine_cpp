@@ -17,6 +17,9 @@ if(Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS}) # 添加 Boost 头文件的搜索路径
 endif()
 
+# 添加 progressbar 库的头文件搜索路径
+include_directories(include/progressbar)
+
 set(HEADERS
         skiplist.h
         ThreadPool.h

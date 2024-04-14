@@ -4,11 +4,15 @@
 #include <thread>
 #include <ctime>
 #include <vector>
+#include <memory>
+#include <mutex>
+#include <condition_variable>
 
 #include "skiplist.h"
 #include "ThreadPool.h"
 #include "benchmark.h"
 #include "ctpl_stl.h"
+#include "progressbar.hpp"
 
 std::mutex mtx;     // 互斥锁，保护临界区资源
 std::string delimiter = ":";    //  键值对之间的分隔符
@@ -183,30 +187,64 @@ void insert_test_threadpool(std::unique_ptr<SkipList<int, std::string>>& skipLis
 {
     // ThreadPool的插入测试逻辑
     ThreadPool pool(THREAD_NUM);
+    std::mutex progress_mtx;
+    progressbar bar(THREAD_NUM);    // 使用线程数量初始化progress bar
+
     auto start = std::chrono::high_resolution_clock::now();
+
     for (int i = 0; i < THREAD_NUM; i++)
     {
-        // 提交插入任务给线程池
-        pool.enqueue(insertElement, std::ref(skipList), i); 
+        {   /* 在无进度条模式下将任务交给线程池的方法 */
+            // 提交插入任务给线程池
+            // pool.enqueue(insertElement, std::ref(skipList), i);
+        }
+
+        {   /* 基于progress bar库的进度条*/
+            pool.enqueue([&skipList, &bar, &progress_mtx, i]() {
+                insertElement(skipList, i);
+                // 同步访问进度条
+                {
+                    std::lock_guard<std::mutex> lock(progress_mtx);
+                    bar.update(); // 每次插入后更新进度条
+                }
+            });
+        }
     }
 
     // 等待所有任务执行完毕
     std::unique_lock<std::mutex> lock(mtx_task);
     cv.wait(lock, [&](){ return completedTasks == THREAD_NUM; });
+
     auto finish = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = finish - start;
+    std::cout << std::endl;
     std::cout << "ThreadPool insert elapsed: " << elapsed.count() << "\n";
     std::cout << "ThreadPool Insert QPS:" << (TEST_DATANUM / 10000) / elapsed.count() << "w" << "\n";
+    std::cout << std::endl; // 在输出耗时后添加换行
 }
 
 void insert_test_multithread(std::unique_ptr<SkipList<int, std::string>>& skipList)
 {
     // 多线程的插入测试逻辑
     std::vector<std::thread> threads;
+    std::mutex progress_mtx;
+    progressbar bar(THREAD_NUM); // 使用线程数量初始化进度条
+
     auto start = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < THREAD_NUM; i++)
     {
-        threads.emplace_back(insertElement, std::ref(skipList), i);
+        {   /* 无进度条模式 */
+            // threads.emplace_back(insertElement, std::ref(skipList), i);
+        }
+        {   /* 基于progress bar库的进度条*/
+            threads.emplace_back([&skipList, &bar, &progress_mtx, i]() {
+                insertElement(skipList, i);
+                {
+                    std::lock_guard<std::mutex> lock(progress_mtx);
+                    bar.update(); // 每次插入后更新进度条
+                }
+            });
+        }
     }
     for (auto &thread : threads)
     {
@@ -215,64 +253,118 @@ void insert_test_multithread(std::unique_ptr<SkipList<int, std::string>>& skipLi
 
     auto finish = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = finish - start;
+    std::cout << std::endl; // 在输出耗时前添加换行
     std::cout << "Multi-thread insert elapsed: " << elapsed.count() << "\n";
     std::cout << "Multi-thread Insert QPS:" << (TEST_DATANUM / 10000) / elapsed.count() << "w" << "\n";
+    std::cout << std::endl; // 在输出耗时后添加换行
 }
 
 void insert_test_ctpl(std::unique_ptr<SkipList<int, std::string>>& skipList)
 {
     ctpl::thread_pool pool(THREAD_NUM); // 创建线程池
+    std::mutex progress_mtx;
+    progressbar bar(THREAD_NUM); // 使用线程数量初始化进度条
+
     auto start = std::chrono::high_resolution_clock::now();
     std::mutex mtx_task;
     std::condition_variable cv;
     int completedTasks = 0;
 
     for (int i = 0; i < THREAD_NUM; i++) {
-        pool.push([&skipList, &mtx_task, &cv, &completedTasks, i](int) {
-            insertElement(skipList, i);
-            std::lock_guard<std::mutex> lock(mtx_task);
-            completedTasks++;
-            cv.notify_one();
-        });
+        {   /* 无进度条模式 */
+            // pool.push([&skipList, &mtx_task, &cv, &completedTasks, i](int)
+            // {
+            //     insertElement(skipList, i);
+            //     std::lock_guard<std::mutex> lock(mtx_task);
+            //     completedTasks++;
+            //     cv.notify_one();
+            // });
+        }
+        {   /* 基于progress bar库的进度条*/
+            pool.push([&skipList, &mtx_task, &cv, &bar, &progress_mtx, &completedTasks, i](int) {
+                insertElement(skipList, i);
+                {
+                    std::lock_guard<std::mutex> lock(progress_mtx);
+                    bar.update(); // 每次插入后更新进度条
+                }
+                std::lock_guard<std::mutex> lock(mtx_task);
+                completedTasks++;
+                cv.notify_one();
+            });
+        }
     }
 
     // 等待所有任务执行完毕
     std::unique_lock<std::mutex> lock(mtx_task);
     cv.wait(lock, [&](){ return completedTasks == THREAD_NUM; });
+
     auto finish = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = finish - start;
+    std::cout << std::endl; // 在输出耗时前添加换行
     std::cout << "CTPL insert elapsed: " << elapsed.count() << " seconds\n";
     std::cout << "CTPL Insert QPS:" << (TEST_DATANUM / 10000) / elapsed.count() << "w" << "\n";
+    std::cout << std::endl; // 在输出耗时后添加换行
 }
 
 void search_test_threadpool(std::unique_ptr<SkipList<int, std::string>>& skipList)
 {
     // ThreadPool的插入测试逻辑
     ThreadPool pool(THREAD_NUM);
+    std::mutex progress_mtx;
+    progressbar bar(THREAD_NUM); // 使用线程数量初始化进度条
+
     auto start = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < THREAD_NUM; i++)
     {
-        // 提交搜索任务给线程池
-        pool.enqueue(getElement, std::ref(skipList), i);
+        {   /* 无进度条模式 */
+            // // 提交搜索任务给线程池
+            // pool.enqueue(getElement, std::ref(skipList), i);
+        }
+        {   /* 基于progress bar库的进度条*/
+            pool.enqueue([&skipList, &bar, &progress_mtx, i]() {
+                getElement(skipList, i);
+                {
+                    std::lock_guard<std::mutex> lock(progress_mtx);
+                    bar.update(); // 每次搜索后更新进度条
+                }
+            });
+        }
     }
 
     // 等待所有任务执行完毕
     std::unique_lock<std::mutex> lock(mtx_task);
     cv.wait(lock, [&](){ return completedTasks == THREAD_NUM; });
+
     auto finish = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = finish - start;
+    std::cout << std::endl; // 在输出耗时前添加换行
     std::cout << "ThreadPool search elapsed: " << elapsed.count() << "\n";
     std::cout << "ThreadPool search QPS:" << (TEST_DATANUM / 10000) / elapsed.count() << "w" << "\n";
+    std::cout << std::endl; // 在输出耗时后添加换行
 }
 
 void search_test_multithread(std::unique_ptr<SkipList<int, std::string>>& skipList)
 {
     // 多线程的插入测试逻辑
     std::vector<std::thread> threads;
+    std::mutex progress_mtx;
+    progressbar bar(THREAD_NUM); // 使用线程数量初始化进度条
+    
     auto start = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < THREAD_NUM; i++)
     {
-        threads.emplace_back(getElement, std::ref(skipList), i);
+        {   /* 无进度条模式 */
+            //threads.emplace_back(getElement, std::ref(skipList), i);
+        }
+        {   /* 基于progress bar库的进度条*/
+            threads.emplace_back([&skipList, &bar, &progress_mtx, i]() {
+                getElement(skipList, i);
+                {
+                    std::lock_guard<std::mutex> lock(progress_mtx);
+                    bar.update(); // 每次搜索后更新进度条
+                }
+            });
+        }
     }
     for (auto &thread : threads)
     {
@@ -281,34 +373,60 @@ void search_test_multithread(std::unique_ptr<SkipList<int, std::string>>& skipLi
 
     auto finish = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = finish - start;
+    std::cout << std::endl; // 在输出耗时前添加换行
     std::cout << "Multi-thread search elapsed: " << elapsed.count() << "\n";
     std::cout << "Multi-thread search QPS:" << (TEST_DATANUM / 10000) / elapsed.count() << "w" << "\n";
+    std::cout << std::endl; // 在输出耗时后添加换行
 }
 
 void search_test_ctpl(std::unique_ptr<SkipList<int, std::string>>& skipList)
 {
     ctpl::thread_pool pool(THREAD_NUM); // 创建线程池
+    std::mutex progress_mtx;
+    progressbar bar(THREAD_NUM); // 使用线程数量初始化进度条
+
     auto start = std::chrono::high_resolution_clock::now();
     std::mutex mtx_task;
     std::condition_variable cv;
     int completedTasks = 0;
 
-    for (int i = 0; i < THREAD_NUM; i++) {
-        pool.push([&skipList, &mtx_task, &cv, &completedTasks, i](int) {
-            getElement(skipList, i);
-            std::lock_guard<std::mutex> lock(mtx_task);
-            completedTasks++;
-            cv.notify_one();
-        });
+    for (int i = 0; i < THREAD_NUM; i++)
+    {
+        {   /* 无进度条模式 */
+            // pool.push([&skipList, &mtx_task, &cv, &completedTasks, i](int) {
+            //     getElement(skipList, i);
+            //     std::lock_guard<std::mutex> lock(mtx_task);
+            //     completedTasks++;
+            //     cv.notify_one();
+            // });
+        }
+        {   /* 基于progress bar库的进度条*/
+            pool.push([&skipList, &bar, &progress_mtx, &mtx_task, &cv, &completedTasks, i](int)
+            {
+                getElement(skipList, i);
+                {
+                    std::lock_guard<std::mutex> lock(progress_mtx);
+                    bar.update(); // 每次搜索后更新进度条
+                }
+                {
+                    std::lock_guard<std::mutex> lock(mtx_task);
+                    completedTasks++;
+                    cv.notify_one();
+                }
+            });
+        }
     }
 
     // 等待所有任务执行完毕
     std::unique_lock<std::mutex> lock(mtx_task);
     cv.wait(lock, [&](){ return completedTasks == THREAD_NUM; });
+
     auto finish = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = finish - start;
+    std::cout << std::endl; // 在输出耗时前添加换行
     std::cout << "CTPL search elapsed: " << elapsed.count() << " seconds\n";
     std::cout << "CTPL search QPS:" << (TEST_DATANUM / 10000) / elapsed.count() << "w" << "\n";
+    std::cout << std::endl; // 在输出耗时后添加换行
 }
 
 void skiplist_usual_use()
