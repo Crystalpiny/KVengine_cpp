@@ -21,17 +21,21 @@ endif()
 include_directories(include/progressbar)
 # 添加 RapidJSON 库的头文件搜索路径
 include_directories(include/rapidjson)
+# 添加 ConfigUpdater 库的头文件搜索路径
+include_directories(ConfigUpdater)
 
 set(HEADERS
         skiplist.h
         ThreadPool.h
         benchmark.h
         ctpl_stl.h
+        ConfigUpdater/ConfigUpdater.h
 )
 
 set(SOURCES
         main.cpp
         benchmark.cpp
+        ConfigUpdater/ConfigUpdater.cpp
 )
 
 add_executable(KVengine ${SOURCES} ${HEADERS})
