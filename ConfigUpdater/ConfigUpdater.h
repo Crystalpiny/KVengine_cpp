@@ -50,4 +50,7 @@ public:
     static bool UpdateUseRandRNG(const std::string &filename, bool newValue);
 };
 
+bool promptForBoolean(const std::string &prompt);
+bool updateConfigFile(const std::string &configFilePath, const std::string &section, const std::string &field, bool value);
+void updateConfiguration();
 #endif // CONFIGUPDATER_H

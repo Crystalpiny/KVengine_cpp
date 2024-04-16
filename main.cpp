@@ -73,33 +73,8 @@ int main()
                 break;
             case 4:
                 // 修改配置文件
-                {    // 提示用户选择是否开启进度条功能
-                    std::cout << "是否开启进度条功能？(1: 开启,0: 关闭): ";
-                    int progressBarChoice;
-                    std::cin >> progressBarChoice;
-
-                    if (std::cin.fail() || (progressBarChoice != 0 && progressBarChoice != 1))
-                    {
-                        std::cin.clear();
-                        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-                        std::cout << "输入无效。请输入1或0。\n";
-                    }
-                    else
-                    {
-                        bool newProgressBarValue = (progressBarChoice == 1);
-                        std::string configFilePath = "C:/SoftWare/VScode-dir/KVengine_cpp/config.json";
-                        bool success = ConfigUpdater::UpdateUseProgressBar(configFilePath, newProgressBarValue);
-                        if (success)
-                        {
-                            std::cout << "配置文件已更新。\n";
-                        }
-                        else
-                        {
-                            std::cerr << "配置文件更新失败。\n";
-                        }
-                    }
-                    break;
-                }
+                updateConfiguration();
+                break;
             case 5:
                 std::cout << "退出程序。" << std::endl;
                 return 0;
