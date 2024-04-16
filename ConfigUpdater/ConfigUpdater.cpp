@@ -90,25 +90,32 @@ bool ConfigUpdater::UpdateUseRandRNG(const std::string &filename, bool newValue)
     return true;
 }
 
-bool promptForBoolean(const std::string& prompt) {
-    while (true) {
+bool promptForBoolean(const std::string& prompt)
+{
+    while (true)
+    {
         std::cout << prompt << " (1: 是, 0: 否): ";
         int choice;
         std::cin >> choice;
-        if (std::cin.fail() || (choice != 0 && choice != 1)) {
+        if (std::cin.fail() || (choice != 0 && choice != 1))
+        {
             std::cin.clear();   // 清除错误标志
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
             std::cout << "输入无效。请输入1或0。\n";
-        } else {
+        }
+        else
+        {
             return choice == 1;    // 返回布尔值
         }
     }
 }
 
-bool updateConfigFile(const std::string& configFilePath, const std::string& section, const std::string& field, bool value) {
+bool updateConfigFile(const std::string& configFilePath, const std::string& section, const std::string& field, bool value)
+{
     // 读取配置文件
     std::ifstream ifs(configFilePath);
-    if (!ifs.is_open()) {
+    if (!ifs.is_open())
+    {
         std::cerr << "无法打开配置文件进行读取: " << configFilePath << std::endl;
         return false;
     }
@@ -119,14 +126,16 @@ bool updateConfigFile(const std::string& configFilePath, const std::string& sect
     ifs.close();
 
     // 检查文档是否正确解析，以及是否存在指定部分
-    if (doc.HasParseError() || !doc.IsObject() || !doc.HasMember(section.c_str())) {
+    if (doc.HasParseError() || !doc.IsObject() || !doc.HasMember(section.c_str()))
+    {
         std::cerr << "配置文件解析错误或缺少指定部分: " << section << std::endl;
         return false;
     }
 
     // 更新字段值
     rapidjson::Value& targetSection = doc[section.c_str()];
-    if (!targetSection.IsObject()) {
+    if (!targetSection.IsObject())
+    {
         std::cerr << "配置部分 " << section << " 不是一个对象。\n";
         return false;
     }
@@ -135,7 +144,8 @@ bool updateConfigFile(const std::string& configFilePath, const std::string& sect
 
     // 写入配置文件
     std::ofstream ofs(configFilePath);
-    if (!ofs.is_open()) {
+    if (!ofs.is_open())
+    {
         std::cerr << "无法打开配置文件进行写入: " << configFilePath << std::endl;
         return false;
     }
@@ -148,7 +158,8 @@ bool updateConfigFile(const std::string& configFilePath, const std::string& sect
     return true;
 }
 
-void updateConfiguration() {
+void updateConfiguration()
+{
     std::string configFilePath = "C:/SoftWare/VScode-dir/KVengine_cpp/config.json";
     
     // 定义配置字段及其对应更新函数的映射
@@ -163,9 +174,12 @@ void updateConfiguration() {
         }},
         {"useRandRNG", [&](){
             bool newValue = promptForBoolean("是否使用标准rand()作为随机数生成器");
-            if (updateConfigFile(configFilePath, "skipListBenchmark", "useRandRNG", newValue)) {
+            if (updateConfigFile(configFilePath, "skipListBenchmark", "useRandRNG", newValue))
+            {
                 std::cout << "配置文件已更新。\n";
-            } else {
+            }
+            else
+            {
                 std::cerr << "配置文件更新失败。\n";
             }
         }}
@@ -174,18 +188,22 @@ void updateConfiguration() {
     // 提示用户选择要更新的配置字段
     std::cout << "请选择要更新的配置字段:\n";
     int optionIndex = 1;
-    for (const auto& option : configOptions) {
+    for (const auto& option : configOptions)
+    {
         std::cout << optionIndex++ << ": " << option.first << '\n';
     }
     std::cout << "请输入选项编号: ";
     
     int selection;
     std::cin >> selection;
-    if (std::cin.fail() || selection < 1 || selection > configOptions.size()) {
+    if (std::cin.fail() || selection < 1 || selection > configOptions.size())
+    {
         std::cin.clear();   // 清除错误标志
         std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
         std::cout << "输入无效。请重新输入。\n";
-    } else {
+    }
+    else
+    {
         // 查找并执行相应的更新函数
         auto it = std::next(configOptions.begin(), selection - 1);
         it->second();
