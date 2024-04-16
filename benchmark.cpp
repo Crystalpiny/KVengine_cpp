@@ -31,7 +31,7 @@ std::mutex mtx_task;                // 线程池任务互斥锁
 
 const std::string configFilePath = "C:/SoftWare/VScode-dir/KVengine_cpp/config.json"; // 配置文件路径
 
-bool ReadConfig(bool& useProgressBar)
+bool ReadProgressBar(bool& useProgressBar)
 {
     std::ifstream configFile(configFilePath);
     if (!configFile.is_open())
@@ -58,6 +58,38 @@ bool ReadConfig(bool& useProgressBar)
     }
 
     return false;
+}
+
+bool ReadUseRandRNG(bool& useRandRNG)
+{
+    std::ifstream configFile(configFilePath); // Replace with your actual config file path
+    if (!configFile.is_open())
+    {
+        std::cerr << "Unable to open config file." << std::endl;
+        return false;
+    }
+    
+    std::string content((std::istreambuf_iterator<char>(configFile)), std::istreambuf_iterator<char>());
+    rapidjson::Document doc;
+    doc.Parse(content.c_str());
+
+    if (!doc.IsObject() || !doc.HasMember("skipListBenchmark") || !doc["skipListBenchmark"].IsObject())
+    {
+        std::cerr << "Invalid config format." << std::endl;
+        return false;
+    }
+
+    const rapidjson::Value& benchmark = doc["skipListBenchmark"];
+    if (benchmark.HasMember("useRandRNG") && benchmark["useRandRNG"].IsBool())
+    {
+        useRandRNG = benchmark["useRandRNG"].GetBool();
+        return true;
+    }
+    else
+    {
+        std::cerr << "Missing 'useRandRNG' field." << std::endl;
+        return false;
+    }
 }
 
 unsigned long long getSafeSeed()
@@ -177,9 +209,25 @@ void insertElement(std::unique_ptr<SkipList<int, std::string>> &skipList, int ti
     for (int i = tid * tmp, count = 0; count < tmp; i++)
     {
         count++;
-        // 使用Xorshift64随机数生成器,随机生成一个键值对
-        Xorshift64 rng(getSafeSeed());
-        skipList->insert_element(rng.nextInRange(0, TEST_DATANUM - 1), "a");
+
+        bool useRandRNG = true;    // 默认使用rand随机数生成器
+        if (!ReadUseRandRNG(useRandRNG))
+        {   // 如果无法读取配置文件或配置项缺失，输出错误信息并返回
+            std::cerr << "Error reading config or missing useRandRNG field." << std::endl;
+            return;
+        }
+
+        if(useRandRNG)
+        {
+            // 使用std::rand()生成随机键值对
+            skipList->insert_element(std::rand() % TEST_DATANUM, "a");
+        }
+        else
+        {
+            // 使用Xorshift64随机数生成器,随机生成一个键值对
+            Xorshift64 rng(getSafeSeed());
+            skipList->insert_element(rng.nextInRange(0, TEST_DATANUM - 1), "a");
+        }
     }
 
     // 插入任务完成，增加计数器的值
@@ -194,16 +242,34 @@ void insertElement(std::unique_ptr<SkipList<int, std::string>> &skipList, int ti
 
 void getElement(std::unique_ptr<SkipList<int, std::string>> &skipList, int tid)
 {
+    bool useRandRNG = true;    // 默认使用rand随机数生成器
+    if (!ReadUseRandRNG(useRandRNG))
+    {   // 如果无法读取配置文件或配置项缺失，输出错误信息并返回
+        std::cerr << "Error reading config or missing useRandRNG field." << std::endl;
+        return;
+    }
+
     // 计算每个线程搜索操作次数
     int tmp = TEST_DATANUM / THREAD_NUM; 
-
-    auto& gen = getThreadLocalMt19937();
-    std::uniform_int_distribution<> dis(0, TEST_DATANUM - 1);
-
-    for (int i = tid * tmp, count = 0; count < tmp; i++)
+    if(useRandRNG)
     {
-        count++;
-        skipList->search_element(dis(gen));
+        for (int i = tid * tmp, count = 0; count < tmp; i++)
+        {
+            count++;
+            // 使用std::rand()生成随机搜索键
+            skipList->search_element(std::rand() % TEST_DATANUM);
+        }
+    }
+    else
+    {
+        auto& gen = getThreadLocalMt19937();
+        std::uniform_int_distribution<> dis(0, TEST_DATANUM - 1);
+
+        for (int i = tid * tmp, count = 0; count < tmp; i++)
+        {
+            count++;
+            skipList->search_element(dis(gen));
+        }
     }
 
     //搜索任务完成，增加计数器的值
@@ -219,7 +285,7 @@ void getElement(std::unique_ptr<SkipList<int, std::string>> &skipList, int tid)
 void insert_test_threadpool(std::unique_ptr<SkipList<int, std::string>>& skipList)
 {
     bool useProgressBar = false;    // 默认不显示进度条
-    if (!ReadConfig(useProgressBar))
+    if (!ReadProgressBar(useProgressBar))
     {   // 如果无法读取配置文件或配置项缺失，输出错误信息并返回
         std::cerr << "Error reading config or missing useProgressBar field." << std::endl;
         return;
@@ -266,7 +332,7 @@ void insert_test_threadpool(std::unique_ptr<SkipList<int, std::string>>& skipLis
 void insert_test_multithread(std::unique_ptr<SkipList<int, std::string>>& skipList)
 {
     bool useProgressBar = false;    // 默认不显示进度条
-    if (!ReadConfig(useProgressBar))
+    if (!ReadProgressBar(useProgressBar))
     {   // 如果无法读取配置文件或配置项缺失，输出错误信息并返回
         std::cerr << "Error reading config or missing useProgressBar field." << std::endl;
         return;
@@ -310,7 +376,7 @@ void insert_test_multithread(std::unique_ptr<SkipList<int, std::string>>& skipLi
 void insert_test_ctpl(std::unique_ptr<SkipList<int, std::string>>& skipList)
 {
     bool useProgressBar = false;    // 默认不显示进度条
-    if (!ReadConfig(useProgressBar))
+    if (!ReadProgressBar(useProgressBar))
     {   // 如果无法读取配置文件或配置项缺失，输出错误信息并返回
         std::cerr << "Error reading config or missing useProgressBar field." << std::endl;
         return;
@@ -366,7 +432,7 @@ void insert_test_ctpl(std::unique_ptr<SkipList<int, std::string>>& skipList)
 void search_test_threadpool(std::unique_ptr<SkipList<int, std::string>>& skipList)
 {
     bool useProgressBar = false;    // 默认不显示进度条
-    if (!ReadConfig(useProgressBar))
+    if (!ReadProgressBar(useProgressBar))
     {   // 如果无法读取配置文件或配置项缺失，输出错误信息并返回
         std::cerr << "Error reading config or missing useProgressBar field." << std::endl;
         return;
@@ -411,7 +477,7 @@ void search_test_threadpool(std::unique_ptr<SkipList<int, std::string>>& skipLis
 void search_test_multithread(std::unique_ptr<SkipList<int, std::string>>& skipList)
 {
     bool useProgressBar = false;    // 默认不显示进度条
-    if (!ReadConfig(useProgressBar))
+    if (!ReadProgressBar(useProgressBar))
     {   // 如果无法读取配置文件或配置项缺失，输出错误信息并返回
         std::cerr << "Error reading config or missing useProgressBar field." << std::endl;
         return;
@@ -455,7 +521,7 @@ void search_test_multithread(std::unique_ptr<SkipList<int, std::string>>& skipLi
 void search_test_ctpl(std::unique_ptr<SkipList<int, std::string>>& skipList)
 {
     bool useProgressBar = false;    // 默认不显示进度条
-    if (!ReadConfig(useProgressBar))
+    if (!ReadProgressBar(useProgressBar))
     {   // 如果无法读取配置文件或配置项缺失，输出错误信息并返回
         std::cerr << "Error reading config or missing useProgressBar field." << std::endl;
         return;

@@ -1,5 +1,6 @@
 {
     "skipListBenchmark": {
-        "useProgressBar": false
+        "useProgressBar": false,
+        "useRandRNG": true
     }
 }

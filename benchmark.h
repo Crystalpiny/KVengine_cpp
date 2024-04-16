@@ -8,16 +8,48 @@
 #define MULTI_NUM_FOR_INPUT (1000000)   //  用户输入数据量的乘数,简化用户操作
 
 /**
- * @brief 读取配置文件并获取进度条使用标志。
+ * @brief 从配置文件中读取 useProgressBar 字段的值。
  * 
- * 此函数尝试打开配置文件，并解析JSON以检索 'useProgressBar' 字段。
- * 如果配置文件不存在、无法打开或JSON格式不正确，函数将返回false。
- * 如果一切正常，函数将设置 'useProgressBar' 并返回true。
+ * 此函数尝试打开并读取指定的配置文件，然后解析其内容以获取 useProgressBar 字段的值。
+ * useProgressBar 字段指示是否展示进度条。
  * 
- * @param useProgressBar 一个引用布尔值，用于存储是否使用进度条的标志。
- * @return bool 如果成功读取配置文件并获取 'useProgressBar' 字段，则返回true，否则返回false。
+ * @param useProgressBar 引用传递，用于存储读取到的 useProgressBar 字段的值。
+ * @return 如果成功读取到 useProgressBar 字段，并且字段类型为布尔型，则返回 true，否则返回 false。
+ * 
+ * @details
+ * 函数首先尝试打开配置文件，如果文件成功打开，则读取文件内容并使用 RapidJSON 解析 JSON 结构。
+ * 解析后，函数检查 "skipListBenchmark" 对象是否存在，及该对象中是否包含 "useProgressBar" 字段。
+ * 如果存在且字段类型为布尔型，则将其值赋给 useProgressBar 参数，函数返回 true。
+ * 如果文件无法打开、JSON 解析失败、缺少必要的字段或字段类型不正确，则函数会输出错误信息并返回 false。
+ * 
+ * @note
+ * - 此函数假定配置文件遵循特定的格式，即包含名为 "skipListBenchmark" 的对象，且该对象中应包含 "useProgressBar" 字段。
+ * - 如果配置文件格式不正确或缺少 "useProgressBar" 字段，函数会报告错误并返回 false。
+ * - 函数只有在成功读取 "useProgressBar" 字段且该字段为布尔类型时才返回 true。
  */
-bool ReadConfig(bool &useProgressBar);
+bool ReadProgressBar(bool &useProgressBar);
+
+/**
+ * @brief 从配置文件中读取 useRandRNG 字段的值。
+ * 
+ * 此函数尝试打开并读取指定的配置文件，然后解析其内容以获取 useRandRNG 字段的值。
+ * useRandRNG 字段指示是否使用标准的 rand() 随机数生成器。
+ * 
+ * @param useRandRNG 一个引用，用于存储读取到的 useRandRNG 字段的值。
+ * @return bool 如果成功读取 useRandRNG 字段并且该字段为布尔类型，则返回 true。如果出现任何错误，则返回 false。
+ * 
+ * @details
+ * 函数首先尝试打开给定路径的配置文件。如果文件成功打开，它会读取文件内容并使用 RapidJSON 解析 JSON 结构。
+ * 解析后，函数检查是否存在 "skipListBenchmark" 对象以及该对象内是否存在 "useRandRNG" 字段。
+ * 如果这些条件满足，并且 "useRandRNG" 字段的类型为布尔型，它的值就会被赋给 useRandRNG 参数。
+ * 如果文件无法打开、JSON 解析失败、缺少必要的字段或字段类型不正确，函数将输出相应的错误消息并返回 false。
+ * 
+ * @note
+ * - 此函数假设配置文件遵循特定的结构，即包含 "skipListBenchmark" 对象，且该对象内应包含 "useRandRNG" 字段。
+ * - 如果配置文件的格式不正确或缺少 "useRandRNG" 字段，函数将报告错误并返回 false。
+ * - 函数返回 true 仅当成功读取 "useRandRNG" 字段且其值为布尔类型。
+ */
+bool ReadUseRandRNG(bool &useRandRNG);
 
 /**
  * @brief Xorshift64 伪随机数生成器类

@@ -53,3 +53,34 @@ bool ConfigUpdater::UpdateUseProgressBar(const std::string &filename, bool newVa
     ofs.close(); // 写入完成，关闭输出流
     return true;
 }
+
+bool ConfigUpdater::UpdateUseRandRNG(const std::string &filename, bool newValue)
+{
+    // 打开并读取配置文件
+    std::ifstream ifs(filename);
+    if (!ifs.is_open()) return false;
+    
+    rapidjson::Document doc;
+    rapidjson::IStreamWrapper isw(ifs);
+    if (doc.ParseStream(isw).HasParseError()) return false;
+    
+    // 确认 skipListBenchmark 字段存在
+    if (!doc.HasMember("skipListBenchmark") || !doc["skipListBenchmark"].IsObject()) return false;
+    
+    auto& skipListBenchmark = doc["skipListBenchmark"];
+    
+    // 更新 useRandRNG 字段
+    if (!skipListBenchmark.HasMember("useRandRNG") || !skipListBenchmark["useRandRNG"].IsBool()) return false;
+    skipListBenchmark["useRandRNG"].SetBool(newValue);
+    
+    // 写回配置文件
+    std::ofstream ofs(filename);
+    if (!ofs.is_open()) return false;
+    
+    rapidjson::StringBuffer buffer;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+    doc.Accept(writer);
+    
+    ofs << buffer.GetString();
+    return true;
+}
