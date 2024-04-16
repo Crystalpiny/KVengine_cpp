@@ -23,7 +23,8 @@ bool ReadConfig(bool &useProgressBar);
  * @brief Xorshift64 伪随机数生成器类
  * 
  */
-class Xorshift64 {
+class Xorshift64
+{
 private:
     uint64_t state;
 
@@ -40,7 +41,8 @@ public:
      * 
      * @return uint64_t 返回下一个伪随机数
      */
-    uint64_t next() {
+    uint64_t next()
+    {
         state ^= state >> 12;
         state ^= state << 25;
         state ^= state >> 27;
@@ -54,7 +56,8 @@ public:
      * @param max 最大值
      * @return uint32_t 返回在指定范围内的伪随机数
      */
-    uint32_t nextInRange(uint32_t min, uint32_t max) {
+    uint32_t nextInRange(uint32_t min, uint32_t max)
+    {
         uint64_t range = max - min + 1;
         return min + static_cast<uint32_t>(next() % range);
     }

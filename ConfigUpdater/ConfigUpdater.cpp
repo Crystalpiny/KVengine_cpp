@@ -29,7 +29,8 @@ bool ConfigUpdater::UpdateUseProgressBar(const std::string &filename, bool newVa
 
     // 检查 "skipListBenchmark" 和 "useProgressBar" 成员是否存在
     if (!document.HasMember("skipListBenchmark") || !document["skipListBenchmark"].IsObject() || 
-        !document["skipListBenchmark"].HasMember("useProgressBar") || !document["skipListBenchmark"]["useProgressBar"].IsBool()) {
+        !document["skipListBenchmark"].HasMember("useProgressBar") || !document["skipListBenchmark"]["useProgressBar"].IsBool())
+    {
         std::cerr << "JSON结构无效。\n";
         return false;
     }

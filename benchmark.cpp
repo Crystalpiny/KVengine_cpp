@@ -203,7 +203,6 @@ void getElement(std::unique_ptr<SkipList<int, std::string>> &skipList, int tid)
     for (int i = tid * tmp, count = 0; count < tmp; i++)
     {
         count++;
-        // 使用<random>库生成随机键，在跳表进行搜索操作
         skipList->search_element(dis(gen));
     }
 

@@ -41,7 +41,8 @@ int main()
         int choice;
         std::cin >> choice;
 
-        if (std::cin.fail()) {
+        if (std::cin.fail())
+        {
             std::cin.clear();
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
             std::cout << "输入无效。请输入数字。\n";

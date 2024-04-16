@@ -9,7 +9,8 @@
  *
  * ConfigUpdater 类包含静态成员函数，用于更新 JSON 配置文件中的特定值。
  */
-class ConfigUpdater {
+class ConfigUpdater
+{
 public:
     /**
      * @brief 静态函数，修改配置文件中的 useProgressBar 值。

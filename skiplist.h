@@ -24,8 +24,8 @@ extern std::string delimiter;    //  键值对之间的分隔符
  * @tparam V 值的类型
  */
 template<typename K, typename V>
-class Node {
-
+class Node
+{
 public:
 
     /**
@@ -86,7 +86,8 @@ private:
 
 //  有参构造函数实现
 template<typename K, typename V>
-Node<K, V>::Node(const K k, const V v, int level) {
+Node<K, V>::Node(const K k, const V v, int level)
+{
     this->key = k;
     this->value = v;
     this->node_level = level;
@@ -99,25 +100,29 @@ Node<K, V>::Node(const K k, const V v, int level) {
 };
 
 template<typename K, typename V>
-Node<K, V>::~Node() {
+Node<K, V>::~Node()
+{
     delete []forward;   // delete [] ，确保释放整个数组
 };
 
 //  获取键
 template<typename K, typename V>
-K Node<K, V>::get_key() const {
+K Node<K, V>::get_key() const
+{
     return key;
 };
 
 //  获取键->值
 template<typename K, typename V>
-V Node<K, V>::get_value() const {
+V Node<K, V>::get_value() const
+{
     return value;
 };
 
 //  设定节点的值为 value
 template<typename K, typename V>
-void Node<K, V>::set_value(V value) {
+void Node<K, V>::set_value(V value)
+{
     this->value=value;
 };
 
@@ -133,8 +138,8 @@ void Node<K, V>::set_value(V value) {
  * @note    键值中的key用int型，如果用其他类型，需要自定义比较函数，同时需要修改skipList.load_file函数
  */
 template <typename K, typename V>
-class SkipList {
-
+class SkipList
+{
 public:
 
     /**
@@ -267,7 +272,8 @@ private:
 
 // 创建一个新节点
 template<typename K, typename V>
-Node<K, V>* SkipList<K, V>::create_node(const K k, const V v, int level) {
+Node<K, V>* SkipList<K, V>::create_node(const K k, const V v, int level)
+{
     Node<K, V> *n = new Node<K, V>(k, v, level);
     return n;
 }
@@ -276,7 +282,8 @@ Node<K, V>* SkipList<K, V>::create_node(const K k, const V v, int level) {
 // return 1 意味着 元素已在跳表中
 // return 0 意味着 元素插入成功
 template<typename K, typename V>
-int SkipList<K, V>::insert_element(const K key, const V value) {
+int SkipList<K, V>::insert_element(const K key, const V value)
+{
 
     mtx.lock(); // 加互斥锁，保障并发安全
     Node<K, V> *current = this->_header;
@@ -286,9 +293,11 @@ int SkipList<K, V>::insert_element(const K key, const V value) {
     memset(update, 0, sizeof(Node<K, V>*)*(_max_level+1));  //  初始化NULL
 
     // 从跳表的最高层级开始
-    for(int i = _skip_list_level; i >= 0; i--) {
+    for(int i = _skip_list_level; i >= 0; i--)
+    {
         //  当前层下一节点存在 且 下一节点的key 小于 参数key
-        while(current->forward[i] != NULL && current->forward[i]->get_key() < key) {
+        while(current->forward[i] != NULL && current->forward[i]->get_key() < key)
+        {
             //  向右走
             current = current->forward[i];
         }
@@ -299,7 +308,8 @@ int SkipList<K, V>::insert_element(const K key, const V value) {
     current = current->forward[0];
 
     // 如果当前节点存在 且 key==传入的参数key
-    if (current != NULL && current->get_key() == key) {
+    if (current != NULL && current->get_key() == key)
+    {
         //std::cout << "key: " << key << ", exists" << std::endl;
         mtx.unlock();   //  解锁互斥量
         return 1;   //  元素已在跳表中(根据key判断)
@@ -307,14 +317,17 @@ int SkipList<K, V>::insert_element(const K key, const V value) {
 
     // 如果 current 为 NULL ，说明到达当前层尾部
     //  如果 current 的键值不等于 key，意味着 需要在 update[0] 和 current 节点之间插入新节点
-    if (current == NULL || current->get_key() != key ) {
+    if (current == NULL || current->get_key() != key )
+    {
 
         // 生成一个随机层级用于新节点
         int random_level = get_random_level();
 
         // 如果随机层级大于跳表的当前层级，将 update 数组的值初始化为指向头节点
-        if (random_level > _skip_list_level) {
-            for (int i = _skip_list_level+1; i < random_level+1; i++) {
+        if (random_level > _skip_list_level)
+        {
+            for (int i = _skip_list_level+1; i < random_level+1; i++)
+            {
                 update[i] = _header;
             }
             _skip_list_level = random_level;    //  更新跳表层数
@@ -324,7 +337,8 @@ int SkipList<K, V>::insert_element(const K key, const V value) {
         Node<K, V>* inserted_node = create_node(key, value, random_level);
 
         // 插入节点
-        for (int i = 0; i <= random_level; i++) {
+        for (int i = 0; i <= random_level; i++)
+        {
             inserted_node->forward[i] = update[i]->forward[i];
             update[i]->forward[i] = inserted_node;
         }
@@ -337,15 +351,18 @@ int SkipList<K, V>::insert_element(const K key, const V value) {
 
 // 可视化跳表
 template<typename K, typename V>
-void SkipList<K, V>::display_list() {
+void SkipList<K, V>::display_list()
+{
 
     std::cout << "\n*****Skip List*****"<<"\n";
     //  遍历所有层级
-    for (int i = 0; i <= _skip_list_level; i++) {
+    for (int i = 0; i <= _skip_list_level; i++)
+    {
         Node<K, V> *node = this->_header->forward[i];
         std::cout << "Level " << i << ": ";
         //  遍历当前层节点
-        while (node != NULL) {
+        while (node != NULL)
+        {
             std::cout << node->get_key() << ":" << node->get_value() << ";";
             node = node->forward[i];
         }
@@ -355,7 +372,8 @@ void SkipList<K, V>::display_list() {
 
 // 内存中数据持久化到本地磁盘中的文件
 template<typename K, typename V>
-void SkipList<K, V>::dump_file() {
+void SkipList<K, V>::dump_file()
+{
 
     std::cout << "dump_file-----------------" << std::endl;
     //  打开文件
@@ -364,7 +382,8 @@ void SkipList<K, V>::dump_file() {
     Node<K, V> *node = this->_header->forward[0];
 
     //  遍历节点并将键值写入文件
-    while (node != NULL) {
+    while (node != NULL)
+    {
         _file_writer << node->get_key() << ":" << node->get_value() << "\n";
         std::cout << node->get_key() << ":" << node->get_value() << ";\n";
         node = node->forward[0];
@@ -390,19 +409,17 @@ void SkipList<K, V>::load_file() {
     std::unique_ptr<std::string> key(new std::string());
     std::unique_ptr<std::string> value(new std::string());
     //  逐行读取文件的内容
-    while (getline(_file_reader, line)) {
+    while (getline(_file_reader, line))
+    {
         get_key_value_from_string(line, key, value);    // 从每一行数据中提取键和值
         // 如果键或值为空，跳过该行数据
-        if (key->empty() || value->empty()) {
+        if (key->empty() || value->empty())
+        {
             continue;
         }
         insert_element(*key, *value);
         std::cout << "key:" << *key << "value:" << *value << std::endl;
     }
-
-    /*//  释放临时申请的内存
-    delete key;
-    delete value;*/
 
     //关闭文件输入流
     _file_reader.close();
@@ -410,15 +427,18 @@ void SkipList<K, V>::load_file() {
 
 //  获取跳表中元素的数量
 template<typename K, typename V>
-int SkipList<K, V>::size() {
+int SkipList<K, V>::size()
+{
     return _element_count;
 }
 
 //  从字符串中提取key:value
 template<typename K, typename V>
-void SkipList<K, V>::get_key_value_from_string(const std::string& str, std::string* key, std::string* value) {
+void SkipList<K, V>::get_key_value_from_string(const std::string& str, std::string* key, std::string* value)
+{
     //  验证字符串是否有效
-    if(!is_valid_string(str)) {
+    if(!is_valid_string(str))
+    {
         return;
     }
     *key = str.substr(0, str.find(delimiter));  //  获取key部分
@@ -427,13 +447,16 @@ void SkipList<K, V>::get_key_value_from_string(const std::string& str, std::stri
 
 //  验证字符串是否有效
 template<typename K, typename V>
-bool SkipList<K, V>::is_valid_string(const std::string& str) {
+bool SkipList<K, V>::is_valid_string(const std::string& str)
+{
     // str为空
-    if (str.empty()) {
+    if (str.empty())
+    {
         return false;
     }
     //  str中不包含 : 分隔符
-    if (str.find(delimiter) == std::string::npos) {
+    if (str.find(delimiter) == std::string::npos)
+    {
         return false;
     }
     return true;
@@ -441,7 +464,8 @@ bool SkipList<K, V>::is_valid_string(const std::string& str) {
 
 // 从跳表中删除元素
 template<typename K, typename V>
-void SkipList<K, V>::delete_element(K key) {
+void SkipList<K, V>::delete_element(K key)
+{
 
     mtx.lock(); //  互斥锁，保障并发安全性
     Node<K, V> *current = this->_header;
@@ -449,9 +473,11 @@ void SkipList<K, V>::delete_element(K key) {
     memset(update, 0, sizeof(Node<K, V>*)*(_max_level+1));  //初始化为NULL
 
     // 从跳表的最高层级开始查找需要删除的元素
-    for (int i = _skip_list_level; i >= 0; i--) {
+    for (int i = _skip_list_level; i >= 0; i--)
+    {
         //  当前层下一节点存在 且 下一节点key值 小于目标key值
-        while (current->forward[i] !=NULL && current->forward[i]->get_key() < key) {
+        while (current->forward[i] !=NULL && current->forward[i]->get_key() < key)
+        {
             current = current->forward[i];  //向右走
         }
         update[i] = current;    //  更新update数组
@@ -459,15 +485,18 @@ void SkipList<K, V>::delete_element(K key) {
 
     current = current->forward[0];
     //  不为空且键值相等 找到要删除的节点
-    if (current != NULL && current->get_key() == key) {
+    if (current != NULL && current->get_key() == key)
+    {
 
         //  从删除节点的层级开始删除，向更低层级遍历，保证在更低的层级一定满足删除条件
-        for(int i=current->node_level;i>=0;i--){
+        for(int i=current->node_level;i>=0;i--)
+        {
             update[i]->forward[i] = current->forward[i];
         }
 
         // 删除无元素的层级,从最高层级开始遍历
-        while (_skip_list_level > 0 && _header->forward[_skip_list_level] == 0) {
+        while (_skip_list_level > 0 && _header->forward[_skip_list_level] == 0)
+        {
             _skip_list_level --;
         }
 
@@ -480,15 +509,18 @@ void SkipList<K, V>::delete_element(K key) {
 
 // 在跳表中根据给定key值搜索元素
 template<typename K, typename V>
-bool SkipList<K, V>::search_element(K key) {
+bool SkipList<K, V>::search_element(K key)
+{
 
     //std::cout << "search_element-----------------" << std::endl;
     Node<K, V> *current = _header;  //  初始化current为跳表头节点
 
     // 从跳表最高层级开始遍历
-    for (int i = _skip_list_level; i >= 0; i--) {
+    for (int i = _skip_list_level; i >= 0; i--)
+    {
         //  如果当前层 下一节点存在 且 key值<参数key值
-        while (current->forward[i] && current->forward[i]->get_key() < key) {
+        while (current->forward[i] && current->forward[i]->get_key() < key)
+        {
             current = current->forward[i];  //向右走
         }
     }
@@ -497,7 +529,8 @@ bool SkipList<K, V>::search_element(K key) {
     current = current->forward[0];
 
     // 如果当前节点的key值与参数key值相等，我们就找到了要搜索的节点
-    if (current and current->get_key() == key) {
+    if (current and current->get_key() == key)
+    {
         //std::cout << "Found key: " << key << ", value: " << current->get_value() << std::endl;
         return true;
     }
@@ -508,7 +541,8 @@ bool SkipList<K, V>::search_element(K key) {
 
 // 跳表 构造函数
 template<typename K, typename V>
-SkipList<K, V>::SkipList(int max_level) {
+SkipList<K, V>::SkipList(int max_level)
+{
 
     this->_max_level = max_level;   // 设置跳表的最大层级数
     this->_skip_list_level = 0;     // 初始化跳表的层级数为0
@@ -522,12 +556,15 @@ SkipList<K, V>::SkipList(int max_level) {
 
 //  跳表 析构函数，回收内存空间
 template<typename K, typename V>
-SkipList<K, V>::~SkipList() {
+SkipList<K, V>::~SkipList()
+{
 
-    if (_file_writer.is_open()) {
+    if (_file_writer.is_open())
+    {
         _file_writer.close();
     }
-    if (_file_reader.is_open()) {
+    if (_file_reader.is_open())
+    {
         _file_reader.close();
     }
 
@@ -543,10 +580,12 @@ SkipList<K, V>::~SkipList() {
 
 //  随机生成层级数
 template<typename K, typename V>
-int SkipList<K, V>::get_random_level(){
+int SkipList<K, V>::get_random_level()
+{
 
     int k = 0;  //  初始化层级为0
-    while (rand() % 2) {
+    while (rand() % 2)
+    {
         k++;
     }
     k = (k < _max_level) ? k : _max_level;  // 将层级数限制在 _max_level 范围内
@@ -558,14 +597,16 @@ void SkipList<K, V>::clear()
 {
     // 遍历跳表的每一层，从最底层开始
     Node<K, V>* current = _header->forward[0];
-    while (current != nullptr) {
+    while (current != nullptr)
+    {
         Node<K, V>* temp = current;
         current = current->forward[0]; // 移动到下一个节点
         delete temp; // 删除当前节点
     }
 
     // 重置头节点的每一层指向
-    for (int i = 0; i < _max_level; ++i) {
+    for (int i = 0; i < _max_level; ++i)
+    {
         _header->forward[i] = nullptr;
     }
 

@@ -1,5 +1,5 @@
 {
     "skipListBenchmark": {
-        "useProgressBar": true
+        "useProgressBar": false
     }
 }
