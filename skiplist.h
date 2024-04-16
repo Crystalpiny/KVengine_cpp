@@ -9,6 +9,8 @@
 #include <mutex>
 #include <fstream>
 #include <memory>
+#include <iomanip>
+#include <vector>
 
 #define STORE_FILE "store/dumpFile" // 宏定义数据持久化文件路径和文件名
 
@@ -196,9 +198,25 @@ public:
     int insert_element(K, V);
 
     /**
-     * @brief 显示跳表的内容
+     * @brief 显示跳表的内容。
+     *
+     * @details
+     * 此方法遍历跳表的每个层级，打印出每一层的节点键值对。首先将每个层级的字符串表示收集到一个字符串向量中。
+     * 接着确定最长的字符串长度，并据此创建一个居中的标题。最后，输出标题和每一层的内容，
+     * 确保标题居中显示，并且每一层的末尾都有一个竖线 "|"。
      * 
-     * 打印跳表的每一层级的节点键值对。
+     * 实现步骤如下：
+     * 1. 通过一个向量存储每一层的字符串表示。
+     * 2. 通过遍历这个向量来确定最长行的长度。
+     * 3. 创建一个与最长行长度相匹配的居中标题。
+     * 4. 如果标题长度不足，通过添加空格来确保它至少与最长行等长。
+     * 5. 按顺序打印标题和各层级的内容。
+     *
+     * @note
+     * - 该方法假定跳表中的节点已经按照从上到下、从左到右的顺序排列。
+     * - 为了美观，每一层的开头都会有"Level x: "的前缀，x为层级编号。
+     * - 每一层结束后都会打印一个额外的竖线 "|", 以标示该层级的结束。
+     * - 输出结果中的标题"***** Skip List *****"将会根据最长行的长度动态居中。
      */
     void display_list();
 
@@ -353,20 +371,51 @@ int SkipList<K, V>::insert_element(const K key, const V value)
 template<typename K, typename V>
 void SkipList<K, V>::display_list()
 {
+    std::vector<std::string> lines; // 用于存储每一层的字符串
 
-    std::cout << "\n*****Skip List*****"<<"\n";
-    //  遍历所有层级
-    for (int i = 0; i <= _skip_list_level; i++)
+    // 遍历所有层级
+    for (int level = _skip_list_level; level >= 0; --level)
     {
-        Node<K, V> *node = this->_header->forward[i];
-        std::cout << "Level " << i << ": ";
-        //  遍历当前层节点
-        while (node != NULL)
+        std::ostringstream oss;
+        oss << "Level " << level << ": ";
+
+        Node<K, V> *node = this->_header->forward[level];
+        while (node != nullptr)
         {
-            std::cout << node->get_key() << ":" << node->get_value() << ";";
-            node = node->forward[i];
+            oss << "|" << node->get_key() << ":" << node->get_value() << " ";
+            node = node->forward[level];
         }
-        std::cout << std::endl;
+        oss << "|"; // 每层最后添加 "|"
+        lines.push_back(oss.str()); // 将每层的字符串添加到lines中
+    }
+
+    // 找到最长的行
+    size_t max_length = 0;
+    for (const auto& line : lines)
+    {
+        if (line.size() > max_length)
+        {
+            max_length = line.size();
+        }
+    }
+
+    // 创建标题，并确保它与最长行一样长且居中
+    std::string title = "***** Skip List *****";
+    size_t title_padding = (max_length - title.size()) / 2;
+    std::string full_title = std::string(title_padding, ' ') + title + std::string(title_padding, ' ');
+
+    // 如果标题不够长，确保它至少与最长行一样长
+    if (full_title.size() < max_length)
+    {
+        full_title += ' ';
+    }
+
+    std::cout << full_title << '\n';
+
+    // 输出每一层
+    for (const auto& line : lines)
+    {
+        std::cout << line << '\n';
     }
 }
 

@@ -518,24 +518,22 @@ void skiplist_usual_use()
         std::unique_ptr<SkipList<int, std::string>> skipList_implement = std::make_unique<SkipList<int, std::string>>(16);
 
         // 写入元素
-        skipList_implement->insert_element(1, "one");
-        skipList_implement->insert_element(2, "two");
-        skipList_implement->insert_element(3, "three");
-        skipList_implement->insert_element(4, "four");
-        skipList_implement->insert_element(5, "five");
-        skipList_implement->insert_element(7, "seven");
-        skipList_implement->insert_element(8, "eight");
-        skipList_implement->insert_element(9, "nine");
-        skipList_implement->insert_element(12, "twelve");
-        skipList_implement->insert_element(17, "seventeen");
-        skipList_implement->insert_element(18, "eighteen");
-        skipList_implement->insert_element(19, "nineteen");
-        skipList_implement->insert_element(20, "twenty");
-        skipList_implement->insert_element(21, "twenty-one");
-        skipList_implement->insert_element(22, "twenty-two");
-        skipList_implement->insert_element(23, "twenty-three");
-        skipList_implement->insert_element(25, "twenty-five");
-        skipList_implement->insert_element(27, "twenty-seven");
+        skipList_implement->insert_element(1, "I");
+        skipList_implement->insert_element(2, "II");
+        skipList_implement->insert_element(3, "III");
+        skipList_implement->insert_element(4, "IV");
+        skipList_implement->insert_element(5, "V");
+        skipList_implement->insert_element(7, "VII");
+        skipList_implement->insert_element(8, "VIII");
+        skipList_implement->insert_element(9, "IX");
+        skipList_implement->insert_element(12, "XII");
+        skipList_implement->insert_element(17, "XVII");
+        skipList_implement->insert_element(18, "XVIII");
+        skipList_implement->insert_element(19, "XIX");
+        skipList_implement->insert_element(20, "XX");
+        skipList_implement->insert_element(21, "XXI");
+        skipList_implement->insert_element(22, "XXII");
+        skipList_implement->insert_element(23, "XXIII");
 
         // 输出跳表元素个数
         std::cout << "skipList size:" << skipList_implement->size() << std::endl;
