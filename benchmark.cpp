@@ -202,27 +202,28 @@ std::unique_ptr<SkipList<int, std::string>> init_benchmark_data()
 
 void insertElement(std::unique_ptr<SkipList<int, std::string>> &skipList, int tid)
 {
+    bool useRandRNG = true;    // 默认使用rand随机数生成器
+    if (!ReadUseRandRNG(useRandRNG))
+    {   // 如果无法读取配置文件或配置项缺失，输出错误信息并返回
+        std::cerr << "Error reading config or missing useRandRNG field." << std::endl;
+        return;
+    }
+
     // 计算每个线程插入操作次数
     int tmp = TEST_DATANUM / THREAD_NUM;
 
     // 每个线程执行插入操作
-    for (int i = tid * tmp, count = 0; count < tmp; i++)
+    if(useRandRNG)
     {
-        count++;
-
-        bool useRandRNG = true;    // 默认使用rand随机数生成器
-        if (!ReadUseRandRNG(useRandRNG))
-        {   // 如果无法读取配置文件或配置项缺失，输出错误信息并返回
-            std::cerr << "Error reading config or missing useRandRNG field." << std::endl;
-            return;
-        }
-
-        if(useRandRNG)
+        for (int i = tid * tmp, count = 0; count < tmp; i++)
         {
-            // 使用std::rand()生成随机键值对
+            count++;
             skipList->insert_element(std::rand() % TEST_DATANUM, "a");
         }
-        else
+    }
+    else
+    {
+        for (int i = tid * tmp, count = 0; count < tmp; i++)
         {
             // 使用Xorshift64随机数生成器,随机生成一个键值对
             Xorshift64 rng(getSafeSeed());
