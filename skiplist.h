@@ -198,6 +198,17 @@ public:
     int insert_element(K, V);
 
     /**
+     * @brief 修改指定键的值。
+     * 
+     * 如果跳表中存在指定键的元素，则更新其值。
+     * 
+     * @param key 要修改的键
+     * @param value 新的值
+     * @return 如果跳表中存在键且值被成功修改，则返回 true；如果键不存在，则返回 false
+     */
+    bool update_element(K key, V value);
+
+    /**
      * @brief 显示跳表的内容。
      *
      * @details
@@ -365,6 +376,36 @@ int SkipList<K, V>::insert_element(const K key, const V value)
     }
     mtx.unlock();
     return 0;   //  表示插入成功
+}
+
+// 更新跳表中键为key的节点的值为value
+// 如果跳表中不存在该键，则返回false
+template<typename K, typename V>
+bool SkipList<K, V>::update_element(K key, V value)
+{
+    Node<K, V> *current = _header;
+
+    // 从最高层开始向下搜索需要更新的节点
+    for (int i = _skip_list_level; i >= 0; i--)
+    {
+        while (current->forward[i] && current->forward[i]->get_key() < key)
+        {
+            current = current->forward[i];
+        }
+    }
+    
+    // 到达第0层，前进到下一个节点
+    current = current->forward[0];
+
+    // 如果当前节点的键与搜索的键匹配，则更新值
+    if (current != nullptr && current->get_key() == key)
+    {
+        current->set_value(value);
+        return true;
+    }
+
+    // 如果跳表中不存在该键，则返回false
+    return false;
 }
 
 // 可视化跳表
