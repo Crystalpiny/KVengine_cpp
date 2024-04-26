@@ -560,8 +560,6 @@ void SkipList<K, V>::delete_element(K key)
 template<typename K, typename V>
 bool SkipList<K, V>::search_element(K key)
 {
-
-    //std::cout << "search_element-----------------" << std::endl;
     Node<K, V> *current = _header;  //  初始化current为跳表头节点
 
     // 从跳表最高层级开始遍历
@@ -580,11 +578,8 @@ bool SkipList<K, V>::search_element(K key)
     // 如果当前节点的key值与参数key值相等，我们就找到了要搜索的节点
     if (current and current->get_key() == key)
     {
-        //std::cout << "Found key: " << key << ", value: " << current->get_value() << std::endl;
         return true;
     }
-
-    //std::cout << "Not Found Key:" << key << std::endl;
     return false;
 }
 
