@@ -74,6 +74,13 @@ public:
     V get_value() const;    //  获取值
 
     /**
+     * @brief Get the value object
+     * 
+     * @return V& 
+     */
+    V &get_value();         // 非const版本的get_value方法，返回值的引用
+
+    /**
      * @brief 设置节点的值
      * 
      * @param value 要设置的值
@@ -121,6 +128,14 @@ K Node<K, V>::get_key() const
 //  获取键->值
 template<typename K, typename V>
 V Node<K, V>::get_value() const
+{
+    return value;
+};
+
+// 获取节点储存的值的引用
+// 返回值类型为V的引用，允许直接修改节点储存的值
+template<typename K, typename V>
+V& Node<K, V>::get_value()
 {
     return value;
 };
@@ -242,6 +257,8 @@ public:
      * @return 如果跳表中存在指定键的元素，则返回 true；否则返回 false
      */
     bool search_element(K);
+
+    V* search_element_value(K key);
 
     /**
      * @brief 从跳表中删除指定键的元素
@@ -628,6 +645,28 @@ bool SkipList<K, V>::search_element(K key)
     return false;
 }
 
+// 在跳表中根据给定key值搜索元素，并将对应值返回
+template<typename K, typename V>
+V* SkipList<K, V>::search_element_value(K key)
+{
+    Node<K, V> *current = _header;
+
+    for (int i = _skip_list_level; i >= 0; i--)
+    {
+        while (current->forward[i] && current->forward[i]->get_key() < key)
+        {
+            current = current->forward[i];
+        }
+    }
+
+    current = current->forward[0];
+
+    if (current != nullptr && current->get_key() == key) {
+        return &(current->get_value()); //返回指向找到的元素值的指针
+    }
+    return nullptr; // 如果未找到，返回null指针
+}
+
 // 跳表 构造函数
 template<typename K, typename V>
 SkipList<K, V>::SkipList(int max_level)
@@ -750,7 +789,15 @@ public:
             else if (command == "SEARCH")
             {
                 iss >> key;
-                _list.search_element(key) ? std::cout << "Element found.\n" : std::cout << "Element not found.\n";
+                auto foundValue = _list.search_element_value(key);
+                if (foundValue != nullptr)
+                {
+                    std::cout << "Element found. Key: " << key << ", Value: " << *foundValue << ".\n";
+                }
+                else
+                {
+                    std::cout << "Element not found.\n";
+                }
             }
             else if (command == "DISPLAY")
             {
