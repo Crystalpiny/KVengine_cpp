@@ -1,7 +1,6 @@
 #ifndef KVENGINE_SKIPLIST_H
 #define KVENGINE_SKIPLIST_H
 
-
 #include <iostream>
 #include <cstdlib>
 #include <cmath>
@@ -11,6 +10,11 @@
 #include <memory>
 #include <iomanip>
 #include <vector>
+#include <Windows.h>
+#include <algorithm>
+#include <cctype>
+#include <sstream>
+#include <string>
 
 #define STORE_FILE "store/dumpFile" // 宏定义数据持久化文件路径和文件名
 
@@ -699,5 +703,94 @@ void SkipList<K, V>::clear()
     _skip_list_level = 0; // 假设跳表初始化时至少有一层
     _element_count = 0;
 }
+
+template<typename K, typename V>
+class SkipListConsole
+{
+public:
+    SkipListConsole(SkipList<K, V>& list) : _list(list) {}
+
+    void run()
+    {
+        std::string input;
+        K key;
+        V value;
+        std::cout << "SkipList Console Interface" << std::endl;
+        std::cout << "Available commands: INSERT <key> <value>, DELETE <key>, UPDATE <key> <value>, SEARCH <key>, DISPLAY, SIZE, CLEAR, EXIT" << std::endl;
+        
+        while (true)
+        {
+            std::cout << "> ";
+            std::getline(std::cin, input);
+            // 使用trim函数处理input，并直接更新input变量
+            input = trim(input);
+            
+            if (input.empty()) continue; // 如果修剪后的输入为空，则跳过当前循环迭代
+
+            std::istringstream iss(input);
+            std::string command;
+            iss >> command;
+
+            if (command == "INSERT")
+            {
+                iss >> key >> value;
+                _list.insert_element(key, value) ? std::cout << "Key already exists.\n" : std::cout << "Element inserted.\n";
+            }
+            else if (command == "DELETE")
+            {
+                iss >> key;
+                _list.delete_element(key);
+                std::cout << "Element deleted (if it existed).\n";
+            }
+            else if (command == "UPDATE")
+            {
+                iss >> key >> value;
+                _list.update_element(key, value) ? std::cout << "Element updated.\n" : std::cout << "Element not found.\n";
+            }
+            else if (command == "SEARCH")
+            {
+                iss >> key;
+                _list.search_element(key) ? std::cout << "Element found.\n" : std::cout << "Element not found.\n";
+            }
+            else if (command == "DISPLAY")
+            {
+                _list.display_list();
+            }
+            else if (command == "SIZE")
+            {
+                std::cout << "Size: " << _list.size() << std::endl;
+            }
+            else if (command == "CLEAR")
+            {
+                _list.clear();
+                std::cout << "List cleared.\n";
+            }
+            else if (command == "EXIT")
+            {
+                std::cout << "Exiting...\n";
+                Sleep(1000); // 参数单位为毫秒
+
+                break;
+            }
+            else
+            {
+                std::cout << "Unknown command.\n";
+            }
+        }
+    }
+private:
+    SkipList<K, V>& _list;
+
+    static std::string trim(const std::string &str)
+    {
+        size_t first = str.find_first_not_of(' ');
+        if (std::string::npos == first)
+        {
+            return str;
+        }
+        size_t last = str.find_last_not_of(' ');
+        return str.substr(first, (last - first + 1));
+    }
+};
 
 #endif //KVENGINE_SKIPLIST_H

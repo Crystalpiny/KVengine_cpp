@@ -37,7 +37,7 @@ int main()
 
     while (true)
     {
-        std::cout << "选择操作：\n1. 进行Benchmark测试\n2. 跳表API接口测试\n3. 其他功能\n4. 修改配置文件\n5. 退出程序\n请输入选项:" << std::endl;
+        std::cout << "选择操作：\n1. 进行Benchmark测试\n2. 跳表API接口测试\n3. 命令识别模式\n4. 修改配置文件\n5. 退出程序\n请输入选项:" << std::endl;
         int choice;
         std::cin >> choice;
 
@@ -69,7 +69,15 @@ int main()
                 skiplist_usual_use();
                 break;
             case 3:
-                // 进入其他功能的处理。
+                // 进入命令识别模式。
+                {
+                    // 创建一个整型键和字符串值的跳表，最大层级为 10
+                    SkipList<int, std::string> skipList(10);
+                    // 将跳表实例传递给控制台接口
+                    SkipListConsole<int, std::string> console(skipList);
+                    // 运行控制台
+                    console.run();
+                }
                 break;
             case 4:
                 // 修改配置文件
