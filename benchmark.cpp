@@ -132,6 +132,27 @@ void prepareSkipListForBenchmark(std::unique_ptr<SkipList<int, std::string>>& sk
     }
 }
 
+std::unique_ptr<SkipList<int, std::string>> init_benchmark_data()
+{
+    // 从标准输入中读取线程数量和测试数据量的值，并赋给全局变量 THREAD_NUM 和 TEST_DATANUM
+    std::cout << "请输入线程数量(通常最大值为16) :";
+    std::cin >> THREAD_NUM;
+
+    int data_input;
+    std::cout << "请输入测试的数据量（百万）：";
+    std::cin >> data_input;
+
+    // 将用户输入的百万单位转换为实际的数据量
+    TEST_DATANUM = data_input * MULTI_NUM_FOR_INPUT;
+
+    std::cout << "请输入跳表的最大层级(推荐设为18) :";
+    std::cin >> MAX_LEVEL;
+
+    // 可以根据传入参数确定跳表最大层级
+    // 使用make_unique创建智能指针
+    return std::make_unique<SkipList<int, std::string>>(MAX_LEVEL);
+}
+
 void skiplist_benchmark()
 {
     std::unique_ptr<SkipList<int, std::string>> skipList = init_benchmark_data();
@@ -179,27 +200,6 @@ void skiplist_benchmark()
     }
 }
 
-std::unique_ptr<SkipList<int, std::string>> init_benchmark_data()
-{
-    // 从标准输入中读取线程数量和测试数据量的值，并赋给全局变量 THREAD_NUM 和 TEST_DATANUM
-    std::cout << "请输入线程数量(通常最大值为16) :";
-    std::cin >> THREAD_NUM;
-
-    int data_input;
-    std::cout << "请输入测试的数据量（百万）：";
-    std::cin >> data_input;
-
-    // 将用户输入的百万单位转换为实际的数据量
-    TEST_DATANUM = data_input * MULTI_NUM_FOR_INPUT;
-
-    std::cout << "请输入跳表的最大层级(推荐设为18) :";
-    std::cin >> MAX_LEVEL;
-
-    // 可以根据传入参数确定跳表最大层级
-    // 使用make_unique创建智能指针
-    return std::make_unique<SkipList<int, std::string>>(MAX_LEVEL);
-}
-
 void insertElement(std::unique_ptr<SkipList<int, std::string>> &skipList, int tid)
 {
     bool useRandRNG = true;    // 默认使用rand随机数生成器
@@ -225,6 +225,7 @@ void insertElement(std::unique_ptr<SkipList<int, std::string>> &skipList, int ti
     {
         for (int i = tid * tmp, count = 0; count < tmp; i++)
         {
+            count++;
             // 使用Xorshift64随机数生成器,随机生成一个键值对
             Xorshift64 rng(getSafeSeed());
             skipList->insert_element(rng.nextInRange(0, TEST_DATANUM - 1), "a");
