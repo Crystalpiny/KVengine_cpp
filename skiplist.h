@@ -74,9 +74,27 @@ public:
     V get_value() const;    //  获取值
 
     /**
-     * @brief Get the value object
+     * @brief 获取存储在节点中的值的引用。
      * 
-     * @return V& 
+     * 此方法返回一个引用，指向节点中存储的值。通过这个引用，可以直接读取或修改该值。这使得对节点值的操作更为直接和高效。
+     * 
+     * 注意：返回的引用直接关联于节点内部的值。因此，对返回的引用所做的任何修改都会直接影响到节点内部的值。使用时请谨慎，
+     * 以避免不希望的数据修改。
+     * 
+     * @tparam K 节点键的类型。
+     * @tparam V 节点值的类型。
+     * 
+     * @return V& 指向节点内部值的引用。通过这个引用，可以读取或修改节点的值。
+     * 
+     * @exception none 此方法不抛出异常。
+     * 
+     * @example
+     * 
+     * Node<int, std::string> myNode(1, "value");
+     * std::string& valRef = myNode.get_value();
+     * valRef = "new value"; // 直接修改节点中的值
+     * 
+     * 使用此方法时，必须确保节点在引用期间保持有效，以防止悬挂引用。
      */
     V &get_value();         // 非const版本的get_value方法，返回值的引用
 
@@ -258,6 +276,23 @@ public:
      */
     bool search_element(K);
 
+    /**
+     * @brief 查找元素值
+     * 
+     * 在跳表中搜索具有给定键的节点，并返回一个指向该节点值的指针。如果节点存在，您将可以通过返回的指针直接访问和修改值。
+     * 如果找不到具有指定键的节点，则返回nullptr。
+     * 
+     * @tparam K 节点键值的类型。
+     * @tparam V 节点存储值的类型。
+     * 
+     * @param key 要搜索的节点的键。
+     * 
+     * @return V* 如果找到了具有指定键的节点，返回指向节点值的指针；如果没有找到，返回nullptr。
+     * 
+     * @note 如果函数返回了一个非空指针，必须确保在使用指针期间跳表的内容不被修改，因为这样可能会使指针失效。
+     * 
+     * @exception none 此方法不抛出任何异常。
+     */
     V* search_element_value(K key);
 
     /**
