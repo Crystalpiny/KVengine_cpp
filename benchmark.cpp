@@ -601,6 +601,7 @@ void skiplist_usual_use()
         skipList_implement->insert_element(21, "XXI");
         skipList_implement->insert_element(22, "XXII");
         skipList_implement->insert_element(23, "XXIII");
+        skipList_implement->update_element(23, "XXIIIC");
 
         // 输出跳表元素个数
         std::cout << "skipList size:" << skipList_implement->size() << std::endl;
