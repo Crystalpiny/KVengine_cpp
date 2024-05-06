@@ -819,12 +819,28 @@ void SkipList<K, V>::clear()
     _element_count = 0;
 }
 
+/**
+ * SkipListConsole类提供了一个用于操作SkipList类的命令行接口。 
+ * 你可以使用它来插入、删除、更新、搜索跳表中的元素以及显示跳表、清空跳表和退出程序。
+ *
+ * @tparam K SkipList中元素的键（Key）类型。
+ * @tparam V SkipList中元素的值（Value）类型。
+ */
 template<typename K, typename V>
 class SkipListConsole
 {
 public:
+    /**
+     * 构造函数，初始化SkipListConsole类的实例。
+     *
+     * @param list 一个引用，指向我们要操作的SkipList实例。
+     */
     SkipListConsole(SkipList<K, V>& list) : _list(list) {}
 
+    /**
+     * run方法启动命令行接口并接受用户命令，直到用户选择退出。
+     * 目前支持的命令包括INSERT, DELETE, UPDATE, SEARCH, DISPLAY, SIZE, CLEAR, EXIT。
+     */
     void run()
     {
         std::string input;
@@ -915,8 +931,14 @@ public:
         }
     }
 private:
-    SkipList<K, V>& _list;
+    SkipList<K, V>& _list;          // 要操作的SkipList实例的引用。
 
+    /**
+     * 静态函数trim用于删除字符串的开头和结尾的空格。
+     *
+     * @param str 待处理的字符串。
+     * @return 删除开头和结尾的空格后的新字符串。
+     */
     static std::string trim(const std::string &str)
     {
         size_t first = str.find_first_not_of(' ');
