@@ -510,7 +510,7 @@ template<typename K, typename V>
 void SkipList<K, V>::display_list()
 {
     std::vector<std::string> lines; // 用于存储每一层的字符串
-
+  
     // 遍历所有层级
     for (int level = _skip_list_level; level >= 0; --level)
     {
@@ -528,7 +528,8 @@ void SkipList<K, V>::display_list()
     }
 
     // 找到最长的行
-    size_t max_length = 0;
+    std::string title = "***** Skip List *****";
+    size_t max_length = title.size();
     for (const auto& line : lines)
     {
         if (line.size() > max_length)
@@ -538,14 +539,13 @@ void SkipList<K, V>::display_list()
     }
 
     // 创建标题，并确保它与最长行一样长且居中
-    std::string title = "***** Skip List *****";
     size_t title_padding = (max_length - title.size()) / 2;
-    std::string full_title = std::string(title_padding, ' ') + title + std::string(title_padding, ' ');
+    std::string full_title = std::string(title_padding, ' ') + title;
 
     // 如果标题不够长，确保它至少与最长行一样长
-    if (full_title.size() < max_length)
+    while (full_title.size() < max_length)
     {
-        full_title += ' ';
+        full_title += " "; // 在标题末尾添加空格以确保长度足够
     }
 
     std::cout << full_title << '\n';
@@ -582,7 +582,8 @@ void SkipList<K, V>::dump_file()
 
 // 加载本地磁盘 文件中的数据
 template<typename K, typename V>
-void SkipList<K, V>::load_file() {
+void SkipList<K, V>::load_file()
+{
 
     _file_reader.open(STORE_FILE);
     std::cout << "load_file-----------------" << std::endl;

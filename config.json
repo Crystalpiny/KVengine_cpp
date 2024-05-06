@@ -1,1 +1,1 @@
-{"skipListBenchmark":{"useProgressBar":true,"useRandRNG":false}}
+{"skipListBenchmark":{"useProgressBar":false,"useRandRNG":true}}
