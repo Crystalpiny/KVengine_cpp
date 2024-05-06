@@ -246,6 +246,25 @@ public:
     bool update_element(K key, V value);
 
     /**
+     * 更新跳表中的元素值。
+     *
+     * 根据给定的键（key），这个方法尝试在跳表中找到对应的元素，
+     * 并用新的值（new_value）更新找到的元素的值。如果元素被成功找到并更新，
+     * 方法将返回true；如果给定的键在跳表中不存在，方法将返回false。
+     *
+     * @param key 要更新的元素的键。这个键用于在跳表中定位元素。
+     * @param new_value 用于更新元素值的新值。
+     * @param old_value 一个引用参数，用于存储被更新的元素的旧值。
+     *        如果方法成功找到并更新元素，旧值将通过这个参数返回。
+     * @return bool 如果元素被成功找到并更新，返回true。
+     *         如果给定的键在跳表中不存在，返回false。
+     *
+     * 注意：这个方法使用search_element_value来定位旧值，然后更新元素值。
+     *       如果定位和更新操作成功，将通过标准输出打印更新信息。
+     */
+    bool update_element_value(K key, V new_vlaue, V &old_value);
+
+    /**
      * @brief 显示跳表的内容。
      *
      * @details
@@ -462,6 +481,28 @@ bool SkipList<K, V>::update_element(K key, V value)
 
     // 如果跳表中不存在该键，则返回false
     return false;
+}
+
+//更新跳表中键位key的节点的值，并显示详细信息
+template<typename K, typename V>
+bool SkipList<K, V>::update_element_value(K key, V new_value, V &old_value)
+{
+    V* found_value = this->search_element_value(key); // 使用search_element_value方法来定位旧值
+
+    if (found_value != nullptr)
+    {
+        old_value = *found_value;  // 存储旧值
+        *found_value = new_value;  // 更新为新值
+
+        // 如有需要，可以在这里输出详细信息
+        std::cout << "Updated key " << key 
+                  << " from: " << old_value 
+                  << " to: " << new_value << std::endl;
+
+        return true; // 成功找到并更新了元素
+    }
+
+    return false; // 未找到元素
 }
 
 // 可视化跳表
@@ -818,8 +859,21 @@ public:
             }
             else if (command == "UPDATE")
             {
-                iss >> key >> value;
-                _list.update_element(key, value) ? std::cout << "Element updated.\n" : std::cout << "Element not found.\n";
+                K key;
+                V new_value;
+                V old_value;
+
+                iss >> key >> new_value;
+                if (_list.update_element_value(key, new_value, old_value))
+                {
+                    std::cout << "Element with key \"" << key
+                            << "\" has been updated from \"" << old_value
+                            << "\" to \"" << new_value << "\".\n";
+                }
+                else
+                {
+                    std::cout << "Element with key \"" << key << "\" not found.\n";
+                }
             }
             else if (command == "SEARCH")
             {
