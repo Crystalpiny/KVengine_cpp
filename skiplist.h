@@ -2,11 +2,11 @@
 #define KVENGINE_SKIPLIST_H
 
 #include <iostream>
+#include <fstream>
 #include <cstdlib>
 #include <cmath>
 #include <cstring>
 #include <mutex>
-#include <fstream>
 #include <memory>
 #include <iomanip>
 #include <vector>
@@ -15,6 +15,11 @@
 #include <cctype>
 #include <sstream>
 #include <string>
+
+#include <document.h>
+#include <istreamwrapper.h>
+#include <ostreamwrapper.h>
+#include <writer.h>
 
 #define STORE_FILE "store/dumpFile" // 宏定义数据持久化文件路径和文件名
 
@@ -351,6 +356,37 @@ public:
      * @tparam V 值的类型
      */
     void clear();
+
+    /**
+     * @brief 从指定的 JSON 文件中加载数据，并将这些数据插入跳表中。
+     *
+     * 此方法打开一个 JSON 文件，读取键值对数组，并依次将它们插入到跳表中。
+     * 键值对应该是 JSON 对象的形式，并且每个对象都应该有 "key" 和 "value" 两个字段。
+     * 如果文件无法打开，或者 JSON 格式不正确（例如，不是一个数组，或者数组中的元素缺少 "key" 或 "value" 字段），
+     * 将输出错误信息并返回。
+     *
+     * @param file_name JSON 文件的路径和名称。
+     * @tparam K 跳表中键的类型。注意，此类型必须与 JSON 文件中的键类型兼容。
+     * @tparam V 跳表中值的类型。注意，此类型必须与 JSON 文件中的值类型兼容。
+     * @note 此方法假设键类型 K 可以从 JSON 的 int 类型转换而来，值类型 V 可以从 JSON 的 string 类型转换而来。
+     *       如果 K 和 V 的类型与此不同，需要对代码进行适当修改。
+     */
+    void load_from_json(const std::string &file_name);
+
+    /**
+     * @brief 将跳表的内容保存到指定的 JSON 文件中。
+     *
+     * 此方法遍历跳表中的所有节点，并将它们作为键值对数组写入到 JSON 文件中。
+     * 每个键值对都会被转换为一个包含 "key" 和 "value" 字段的 JSON 对象。
+     * 如果文件无法打开，将输出错误信息并返回。
+     *
+     * @param file_name 要保存到的 JSON 文件的路径和名称。
+     * @tparam K 跳表中键的类型。注意，此类型必须能够转换为 JSON 支持的类型。
+     * @tparam V 跳表中值的类型。注意，此类型必须能够转换为 JSON 支持的类型。
+     * @note 此方法假设键类型 K 和值类型 V 可以分别转换为 JSON 的 int 和 string 类型。
+     *       如果 K 和 V 的类型与此不同，需要对代码进行适当修改。
+     */
+    void save_to_json(const std::string &file_name);
 
 private:
     void get_key_value_from_string(const std::string& str, std::string* key, std::string* value);   //  从字符串提取键值对
@@ -818,6 +854,84 @@ void SkipList<K, V>::clear()
     // 重置跳表的当前层级和元素计数
     _skip_list_level = 0; // 假设跳表初始化时至少有一层
     _element_count = 0;
+}
+
+template<typename K, typename V>
+void SkipList<K, V>::load_from_json(const std::string& file_name)
+{
+    std::ifstream ifs(file_name);
+    if (!ifs.is_open())
+    {
+        std::cerr << "Error: Cannot open file " << file_name << std::endl;
+        return;
+    }
+
+    rapidjson::IStreamWrapper isw(ifs);
+    rapidjson::Document doc;
+    doc.ParseStream(isw);
+    ifs.close();
+
+    if (!doc.IsArray())
+    {
+        std::cerr << "Error: JSON file must contain an array of key-value pairs" << std::endl;
+        return;
+    }
+
+    for (rapidjson::SizeType i = 0; i < doc.Size(); i++)
+    {
+        if (!doc[i].IsObject() || !doc[i].HasMember("key") || !doc[i].HasMember("value"))
+        {
+            std::cerr << "Error: Each key-value pair must be an object with 'key' and 'value'." << std::endl;
+            continue;
+        }
+        try {
+            if (!doc[i]["key"].IsInt() || !doc[i]["value"].IsString()) {
+                std::cerr << "Error: Key or value type mismatch in element " << i << "." << std::endl;
+                continue;
+            }
+
+            K key = doc[i]["key"].GetInt();
+            V value = doc[i]["value"].GetString();
+            insert_element(key, value);
+        }
+        catch (const std::exception& e)
+        {
+            std::cerr << "Error: Exception caught while processing key-value pair at index " << i << ": " << e.what() << std::endl;
+            continue;
+        }
+    }
+}
+
+template<typename K, typename V>
+void SkipList<K, V>::save_to_json(const std::string& file_name)
+{
+    std::ofstream ofs(file_name);
+    if (!ofs.is_open())
+    {
+        std::cerr << "Error: Cannot open file " << file_name << std::endl;
+        return;
+    }
+
+    rapidjson::OStreamWrapper osw(ofs);
+    rapidjson::Document doc;
+    doc.SetArray();
+    rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
+
+    Node<K, V>* node = this->_header->forward[0];
+    while (node != nullptr)
+    {
+        rapidjson::Value obj(rapidjson::kObjectType);
+
+        obj.AddMember("key", rapidjson::Value().SetInt(node->get_key()), allocator);
+        obj.AddMember("value", rapidjson::Value().SetString(node->get_value().c_str(), allocator), allocator);
+
+        doc.PushBack(obj, allocator);
+        node = node->forward[0];
+    }
+
+    rapidjson::Writer<rapidjson::OStreamWrapper> writer(osw);
+    doc.Accept(writer);
+    ofs.close();
 }
 
 /**
