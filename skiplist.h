@@ -1,21 +1,23 @@
 #ifndef KVENGINE_SKIPLIST_H
 #define KVENGINE_SKIPLIST_H
 
+#include <algorithm>
 #include <iostream>
 #include <fstream>
 #include <cstdlib>
 #include <cmath>
 #include <cstring>
+#include <cctype>
+#include <chrono>
 #include <mutex>
 #include <memory>
 #include <iomanip>
 #include <vector>
 #include <Windows.h>
-#include <algorithm>
-#include <cctype>
 #include <sstream>
 #include <string>
 
+/* 引入RapidJSON库头文件 */
 #include <document.h>
 #include <istreamwrapper.h>
 #include <ostreamwrapper.h>
@@ -380,13 +382,13 @@ public:
      * 每个键值对都会被转换为一个包含 "key" 和 "value" 字段的 JSON 对象。
      * 如果文件无法打开，将输出错误信息并返回。
      *
-     * @param file_name 要保存到的 JSON 文件的路径和名称。
+     * @param basic_file_name 要保存到的 JSON 文件的路径和名称。
      * @tparam K 跳表中键的类型。注意，此类型必须能够转换为 JSON 支持的类型。
      * @tparam V 跳表中值的类型。注意，此类型必须能够转换为 JSON 支持的类型。
      * @note 此方法假设键类型 K 和值类型 V 可以分别转换为 JSON 的 int 和 string 类型。
      *       如果 K 和 V 的类型与此不同，需要对代码进行适当修改。
      */
-    void save_to_json(const std::string &file_name);
+    void save_to_json(const std::string &basic_file_name);
 
 private:
     void get_key_value_from_string(const std::string& str, std::string* key, std::string* value);   //  从字符串提取键值对
@@ -903,20 +905,35 @@ void SkipList<K, V>::load_from_json(const std::string& file_name)
 }
 
 template<typename K, typename V>
-void SkipList<K, V>::save_to_json(const std::string& file_name)
+void SkipList<K, V>::save_to_json(const std::string& basic_file_name)
 {
-    std::ofstream ofs(file_name);
+    // 获取当前时间点
+    auto now = std::chrono::system_clock::now();
+    auto now_time_t = std::chrono::system_clock::to_time_t(now);
+
+    // 将当前时间转换为字符串
+    std::stringstream ss;
+    ss << std::put_time(std::localtime(&now_time_t), "%Y-%m-%d_%H-%M-%S");
+    std::string time_str = ss.str();
+
+    // 创建带有时间标签的文件名
+    std::string file_name_with_time = "C:/SoftWare/VScode-dir/KVengine_cpp/store/" + basic_file_name + "_" + time_str + ".json";
+
+    // 使用新的文件名打开文件输出流
+    std::ofstream ofs(file_name_with_time);
     if (!ofs.is_open())
     {
-        std::cerr << "Error: Cannot open file " << file_name << std::endl;
+        std::cerr << "Error: Cannot open file " << file_name_with_time << std::endl;
         return;
     }
 
+    // 写JSON数据到文件
     rapidjson::OStreamWrapper osw(ofs);
     rapidjson::Document doc;
     doc.SetArray();
     rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
 
+    // 遍历跳表节点，并将它们存储到JSON文件中
     Node<K, V>* node = this->_header->forward[0];
     while (node != nullptr)
     {
@@ -929,8 +946,11 @@ void SkipList<K, V>::save_to_json(const std::string& file_name)
         node = node->forward[0];
     }
 
+    // 利用Writer类快速写入数据到文档流中
     rapidjson::Writer<rapidjson::OStreamWrapper> writer(osw);
     doc.Accept(writer);
+
+    // 关闭文件流
     ofs.close();
 }
 
