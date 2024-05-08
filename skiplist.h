@@ -376,17 +376,30 @@ public:
     void load_from_json(const std::string &file_name);
 
     /**
-     * @brief 将跳表的内容保存到指定的 JSON 文件中。
-     *
-     * 此方法遍历跳表中的所有节点，并将它们作为键值对数组写入到 JSON 文件中。
-     * 每个键值对都会被转换为一个包含 "key" 和 "value" 字段的 JSON 对象。
-     * 如果文件无法打开，将输出错误信息并返回。
-     *
-     * @param basic_file_name 要保存到的 JSON 文件的路径和名称。
-     * @tparam K 跳表中键的类型。注意，此类型必须能够转换为 JSON 支持的类型。
-     * @tparam V 跳表中值的类型。注意，此类型必须能够转换为 JSON 支持的类型。
-     * @note 此方法假设键类型 K 和值类型 V 可以分别转换为 JSON 的 int 和 string 类型。
-     *       如果 K 和 V 的类型与此不同，需要对代码进行适当修改。
+     * @brief 保存跳表内容到JSON文件。此函数将当前跳表的键值对以JSON格式保存到指定的文件中。
+     *        文件名将包含基础文件名与当前时间戳，确保每个文件都是唯一的。文件将被保存到指定的绝对路径下。
+     * 
+     * @tparam K 跳表键的类型。
+     * @tparam V 跳表值的类型。
+     * @param basic_file_name 基础文件名，不包含路径和文件扩展名。函数将在此基础上添加时间戳和.json扩展名。
+     * 
+     * @details
+     * 函数执行流程如下：
+     * 1. 获取当前时间，并转化为字符串形式，用以生成唯一的文件名。
+     * 2. 构造完整的文件名，包含事先设定的绝对路径和".json"扩展名。
+     * 3. 打开文件输出流，准备写入数据。
+     *    - 如果无法打开文件，函数将输出错误信息并提前返回。
+     * 4. 利用RapidJSON库创建一个空的JSON数组。
+     * 5. 遍历跳表的所有节点，为每一个键值对创建JSON对象，并添加到JSON数组中。
+     * 6. 将JSON数组写入文件。
+     * 7. 关闭文件输出流。
+     * 
+     * 注意：确保有写权限到指定的文件夹路径，并且RapidJSON库已经被正确引入到项目中。
+     * 
+     * 使用示例：
+     * SkipList<int, std::string> skiplist;
+     * skiplist.save_to_json("my_skiplist_data");
+     * 将生成文件名类似于 "C:/SoftWare/VScode-dir/KVengine_cpp/store/my_skiplist_data_2024-01-01_12-00-00.json"
      */
     void save_to_json(const std::string &basic_file_name);
 
