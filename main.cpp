@@ -3,6 +3,7 @@
 #include "skiplist.h"
 #include "ThreadPool.h"
 #include "benchmark.h"
+#include "JsonTest.h"
 #include "ConfigUpdater/ConfigUpdater.h"
 
 /**
@@ -20,8 +21,9 @@
  * - 1: 执行Benchmark基准测试，如果已经执行过，将提示用户测试已完成。
  * - 2: 进行跳表API接口测试。
  * - 3: 进入命令识别模式。
- * - 4: 修改配置文件中的进度条显示选项。
- * - 5: 退出程序。
+ * - 4: 测试JSON存取数据接口。
+ * - 5: 修改配置文件中的进度条显示选项。
+ * - 6: 退出程序。
  * 用户需要输入对应的数字来选择想要执行的操作。如果输入无效，程序将提示重新输入。
  *
  * @note
@@ -37,7 +39,7 @@ int main()
 
     while (true)
     {
-        std::cout << "选择操作：\n1. 进行Benchmark测试\n2. 跳表API接口测试\n3. 命令识别模式\n4. 修改配置文件\n5. 退出程序\n请输入选项:" << std::endl;
+        std::cout << "选择操作：\n1. 进行Benchmark测试\n2. 跳表API接口测试\n3. 命令识别模式\n4.测试JSON存取\n5. 修改配置文件\n6. 退出程序\n请输入选项:" << std::endl;
         int choice;
         std::cin >> choice;
 
@@ -80,10 +82,13 @@ int main()
                 }
                 break;
             case 4:
+                test_load_save_interface();
+                break;
+            case 5:
                 // 修改配置文件
                 updateConfiguration();
                 break;
-            case 5:
+            case 6:
                 std::cout << "退出程序。" << std::endl;
                 return 0;
             default:
