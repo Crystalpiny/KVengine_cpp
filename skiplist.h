@@ -403,6 +403,19 @@ public:
      */
     void save_to_json(const std::string &basic_file_name);
 
+    /**
+     * @brief 比较当前跳表与另一个跳表的最低层中的键值对是否完全一致。
+     * 
+     * @details
+     * 此方法执行一个逐节点对比的操作，比较每个节点的键和值：
+     * - 如果所有对应节点的键和值均相等，则认为两个跳表在最低层是一致的。
+     * - 如果在任何点上发现键或值不相等，或者两个跳表的节点数量不同，则认为它们不一致。
+     * 
+     * @tparam K 键的类型。
+     * @tparam V 值的类型。
+     * @param other 与当前跳表进行对比的另一个跳表对象的引用。
+     * @return 如果两个跳表在最低层完全一致，则返回true；否则返回false。
+     */
     bool skiplist_equals(const SkipList<K, V>& other) const;
 
 private:
