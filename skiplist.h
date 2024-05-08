@@ -403,6 +403,8 @@ public:
      */
     void save_to_json(const std::string &basic_file_name);
 
+    bool skiplist_equals(const SkipList<K, V>& other) const;
+
 private:
     void get_key_value_from_string(const std::string& str, std::string* key, std::string* value);   //  从字符串提取键值对
     bool is_valid_string(const std::string& str);   //  检查字符串是否有效
@@ -965,6 +967,30 @@ void SkipList<K, V>::save_to_json(const std::string& basic_file_name)
 
     // 关闭文件流
     ofs.close();
+}
+
+template<typename K, typename V>
+bool SkipList<K, V>::skiplist_equals(const SkipList<K, V>& other) const
+{
+    Node<K, V>* currentThis = this->_header->forward[0];
+    Node<K, V>* currentOther = other._header->forward[0];
+
+    // 同时遍历两个跳表的最低层
+    while (currentThis != nullptr && currentOther != nullptr)
+    {
+        // 检查键和值是否一致
+        if (currentThis->get_key() != currentOther->get_key() || currentThis->get_value() != currentOther->get_value())
+        {
+            return false; // 发现不一致的键值对，立即返回false
+        }
+        
+        // 移动到下一个节点
+        currentThis = currentThis->forward[0];
+        currentOther = currentOther->forward[0];
+    }
+
+    // 如果两个跳表的最低层同时遍历完毕，则它们一致；否则，不一致
+    return currentThis == nullptr && currentOther == nullptr;
 }
 
 /**
