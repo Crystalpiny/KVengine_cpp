@@ -39,7 +39,7 @@ int main()
 
     while (true)
     {
-        std::cout << "选择操作：\n1. 进行Benchmark测试\n2. 跳表API接口测试\n3. 命令识别模式\n4.测试JSON存取\n5. 修改配置文件\n6. 退出程序\n请输入选项:" << std::endl;
+        std::cout << "选择操作：\n1. 进行Benchmark测试\n2. 跳表API接口测试\n3. 命令识别模式\n4. 测试JSON存取\n5. 修改配置文件\n6. 退出程序\n请输入选项:" << std::endl;
         int choice;
         std::cin >> choice;
 

@@ -2,6 +2,7 @@
 #define KVENGINE_SKIPLIST_H
 
 #include <algorithm>
+#include <atomic>
 #include <iostream>
 #include <fstream>
 #include <cstdlib>
@@ -16,6 +17,11 @@
 #include <Windows.h>
 #include <sstream>
 #include <string>
+#include <thread>
+
+#include "document.h"
+#include "ostreamwrapper.h"
+#include "writer.h"
 
 /* 引入RapidJSON库头文件 */
 #include <document.h>
@@ -24,6 +30,7 @@
 #include <writer.h>
 
 #define STORE_FILE "store/dumpFile" // 宏定义数据持久化文件路径和文件名
+#define CHRONO_STORE_FILE_NAME "chrono_dump_file"    //宏定义定时数据持久化基础文件名
 
 extern std::mutex mtx;           // 互斥锁，保护临界区资源
 extern std::string delimiter;    //  键值对之间的分隔符
@@ -1136,6 +1143,44 @@ private:
         size_t last = str.find_last_not_of(' ');
         return str.substr(first, (last - first + 1));
     }
+};
+
+template<typename K, typename V>
+class AutoSaveSkipList : public SkipList<K, V>
+{
+    std::thread autoSaveThread;
+    std::atomic<bool> stopAutoSaveThread = false;
+
+    // 自动保存函数，定期将跳表数据保存到JSON文件
+    void autoSaveRoutine(const std::string& filename, unsigned int intervalSeconds)
+    {
+        while (!stopAutoSaveThread.load())
+        {
+            std::this_thread::sleep_for(std::chrono::seconds(intervalSeconds));
+            this->save_to_json(filename + "_autosave");
+        }
+    }
+
+public:
+    // 构造函数，启动自动保存线程
+    AutoSaveSkipList(int maxLevel, const std::string& filename, unsigned int intervalSeconds) 
+        : SkipList<K, V>(maxLevel) {
+        autoSaveThread = std::thread(&AutoSaveSkipList::autoSaveRoutine, this, filename, intervalSeconds);
+    }
+
+    // 析构函数，确保线程被正确结束
+    ~AutoSaveSkipList()
+    {
+        stopAutoSaveThread.store(true);
+        if (autoSaveThread.joinable())
+        {
+            autoSaveThread.join();
+        }
+    }
+
+    // 禁止拷贝构造函数和拷贝赋值操作，避免复制时的竞态条件
+    AutoSaveSkipList(const AutoSaveSkipList&) = delete;
+    AutoSaveSkipList& operator=(const AutoSaveSkipList&) = delete;
 };
 
 #endif //KVENGINE_SKIPLIST_H
