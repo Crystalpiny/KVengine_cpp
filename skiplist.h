@@ -19,10 +19,6 @@
 #include <string>
 #include <thread>
 
-#include "document.h"
-#include "ostreamwrapper.h"
-#include "writer.h"
-
 /* 引入RapidJSON库头文件 */
 #include <document.h>
 #include <istreamwrapper.h>
