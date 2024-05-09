@@ -1145,13 +1145,26 @@ private:
     }
 };
 
+/**
+ * @class AutoSaveSkipList
+ * @brief 继承自SkipList，增加了自动保存功能的跳表。
+ * @details 该类扩展了SkipList，通过后台线程定期将跳表数据自动保存到JSON文件，以实现数据的持久化。
+ * @tparam K SkipList中键的类型。
+ * @tparam V SkipList中值的类型。
+ */
 template<typename K, typename V>
 class AutoSaveSkipList : public SkipList<K, V>
 {
     std::thread autoSaveThread;
     std::atomic<bool> stopAutoSaveThread = false;
 
-    // 自动保存函数，定期将跳表数据保存到JSON文件
+    /**
+     * @class AutoSaveSkipList
+     * @brief 继承自SkipList，增加了自动保存功能的跳表。
+     * @details 该类扩展了SkipList，通过后台线程定期将跳表数据自动保存到JSON文件，以实现数据的持久化。
+     * @tparam K SkipList中键的类型。
+     * @tparam V SkipList中值的类型。
+     */
     void autoSaveRoutine(const std::string& filename, unsigned int intervalSeconds)
     {
         while (!stopAutoSaveThread.load())
@@ -1162,13 +1175,23 @@ class AutoSaveSkipList : public SkipList<K, V>
     }
 
 public:
-    // 构造函数，启动自动保存线程
+    /**
+     * @brief 构造函数，初始化跳表并启动自动保存线程。
+     * @details 创建一个AutoSaveSkipList对象，同时启动一个后台线程，定期将跳表数据保存到指定文件。构造函数接受跳表的最大层级、保存文件的名字和自动保存的间隔时间作为参数。
+     * @param maxLevel 跳表的最大层数。
+     * @param filename 用于保存跳表数据的文件名。
+     * @param intervalSeconds 自动保存到文件的时间间隔（秒）。
+     */
     AutoSaveSkipList(int maxLevel, const std::string& filename, unsigned int intervalSeconds) 
         : SkipList<K, V>(maxLevel) {
         autoSaveThread = std::thread(&AutoSaveSkipList::autoSaveRoutine, this, filename, intervalSeconds);
     }
 
-    // 析构函数，确保线程被正确结束
+    /**
+     * @brief 析构函数，确保自动保存线程被正确终止。
+     * @details 在对象析构时，设置`stopAutoSaveThread`为true，并等待后台线程结束，确保资源被正确释放。
+     * @note 如果自动保存线程处于活动状态，这将阻塞直至线程完成。
+     */
     ~AutoSaveSkipList()
     {
         stopAutoSaveThread.store(true);
@@ -1178,8 +1201,16 @@ public:
         }
     }
 
-    // 禁止拷贝构造函数和拷贝赋值操作，避免复制时的竞态条件
+    /**
+     * @brief 拷贝构造函数。已删除以防止实例被拷贝。
+     * @details 删除拷贝构造函数以防止跳过列表实例被不正确地拷贝，这可能会导致资源竞争等问题。
+     */
     AutoSaveSkipList(const AutoSaveSkipList&) = delete;
+
+    /**
+     * @brief 拷贝赋值操作。已删除以防止实例之间的赋值。
+     * @details 删除拷贝赋值操作以保证每个跳过列表实例是唯一的，避免不一致性和资源竞争问题。
+     */
     AutoSaveSkipList& operator=(const AutoSaveSkipList&) = delete;
 };
 
