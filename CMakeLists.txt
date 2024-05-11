@@ -31,6 +31,7 @@ set(HEADERS
         ctpl_stl.h
         ConfigUpdater/ConfigUpdater.h
         JsonTest.h
+        logMod.h
 )
 
 set(SOURCES
