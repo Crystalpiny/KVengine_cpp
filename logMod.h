@@ -34,6 +34,18 @@ static constexpr char DigitsTable[200] = {
     '9', '0', '9', '1', '9', '2', '9', '3', '9', '4', '9', '5', '9', '6', '9',
     '7', '9', '8', '9', '9'};
 
+/**
+ * @brief 对无符号整型数进行格式化，并转存为字符数组
+ * 
+ * @tparam T 数据类型，需为整型（通过 is_integral 判断）
+ * @tparam 默认模板参数为空，根据 T 类型的有效性进行启用或禁用
+ * @param v 要格式化的无符号整数
+ * @param to 存放结果的字符数组
+ * @return size_t 返回字符数组的长度
+ *
+ * 函数利用循环将整数 v 按两位数的方式转换为对应的字符，存储在字符数组 to 中。
+ * 如果 v 最后不足两位数，则单独处理。生成的字符数组的字符顺序与整数 v 相反。
+ */
 template <typename T,
           typename std::enable_if<std::is_integral<T>::value, T>::type = 0>
 static inline size_t formatUIntInternal(T v, char to[])
@@ -62,6 +74,16 @@ static inline size_t formatUIntInternal(T v, char to[])
   return p - to;
 }
 
+/**
+ * @brief 对有符号整型数进行格式化，并转存为字符数组。
+ * 
+ * @tparam T 数据类型，需为整型（通过 `std::is_integral` 判断）
+ * @param v 要格式化的有符号整数
+ * @param to 存放结果的字符数组
+ * @return size_t 返回字符数组的长度
+ * 
+ * 该函数处理有符号整数的格式化，负数会先转化为正数处理。
+ */
 template <typename T,
           typename std::enable_if<std::is_integral<T>::value, T>::type = 0>
 static inline size_t formatSIntInternal(T v, char to[])
@@ -90,6 +112,16 @@ static inline size_t formatSIntInternal(T v, char to[])
   return p - to;
 }
 
+/**
+ * @brief 格式化整型数（无论正负）为字符串表示。
+ * 
+ * @tparam T 数据类型，需为整型（通过 `std::is_integral` 检查）
+ * @param v 要格式化的整数
+ * @param to 存放结果的字符数组
+ * @return size_t 返回字符串的长度
+ * 
+ * 如果整数为负数，会在结果前添加负号。使用辅助函数 `formatSIntInternal` 或 `formatUIntInternal` 来格式化整数。
+ */
 template <typename T,
           typename std::enable_if<std::is_integral<T>::value, T>::type = 0>
 static inline size_t formatInt(T v, char *to)
@@ -116,6 +148,17 @@ static inline size_t formatInt(T v, char *to)
   return signLen + intLen;
 }
 
+/**
+ * @brief 格式化无符号整型数，为其指定宽度，不足部分用0填充。
+ * 
+ * @tparam T 数据类型，需为整型（通过 `std::is_integral` 判断）
+ * @param v 要格式化的无符号整数
+ * @param to 存放结果的字符数组
+ * @param fmtLen 指定的格式化长度
+ * @return size_t 返回字符串的实际长度
+ * 
+ * 如果整数的位数少于指定长度，会在前面填充0以达到指定长度。
+ */
 template <typename T,
           typename std::enable_if<std::is_integral<T>::value, T>::type = 0>
 static inline size_t formatUIntWidth(T v, char *to, size_t fmtLen)
@@ -134,12 +177,24 @@ static inline size_t formatUIntWidth(T v, char *to, size_t fmtLen)
   return fmtLen;
 }
 
+/**
+ * @brief 将字符写入字符数组。
+ * 
+ * @param to 目标字符数组
+ * @param c 要写入的字符
+ * @return size_t 返回写入的字符数（总是1）
+ * 
+ * 该函数用于将单个字符写入到指定的数组位置。
+ */
 static inline size_t formatChar(char *to, char c)
 {
   *to = c;
   return sizeof(char);
 }
 
+/**
+ * 枚举描述日期时间字段的长度。
+ */
 enum TimeFieldLen : size_t
 {
   Year = 4,
@@ -150,8 +205,14 @@ enum TimeFieldLen : size_t
   Second = 2,
 };
 
+/**
+ * 枚举描述秒的小数部分的长度。
+ */
 enum SecFracLen : size_t { Sec = 0, Milli = 3, Macro = 6, Nano = 9 };
 
+/**
+ * Time 类提供对日期和时间的封装，包括了从标准时间获取到格式化输出的各种操作。
+ */
 class Time
 {
 public:
@@ -195,7 +256,28 @@ public:
   // 自1970-01-01T00:00:00Z以来经过的纳秒数。
   int64_t count() const { return tp_.time_since_epoch().count(); }
 
-  // 获取时区名称和UTC东部的偏移秒数。
+/**
+* 获取当前实例所对应的时区名称和UTC偏移秒数。
+* 
+* 该方法计算当前时间点相对于UTC的偏移量（以秒为单位）和本地时区的名称。
+* 偏移量可以是正数、负数或零，表示本地时间相对于UTC的前移或后移量。
+* 
+* @return 返回一个std::pair对象，它的first元素是一个long int，代表与UTC的偏移秒数；
+* second元素是一个字符串，表示时区的名称。
+* 如果时区名称和偏移量未被初始化（即第一次调用此函数），它们将被设定并返回。
+* 
+* 示例返回值：
+* 对于位于东八区的时区，可能返回 {28800, "CST"}，
+* 其中28800秒代表与UTC的正向偏移8小时，"CST"为该时区的名称。
+* 
+* 注意：
+* - 此方法使用了thread_local关键字使得偏移量和时区名称对每个线程是唯一的，
+*   因此在多线程环境中安全使用。
+* - 时区名称是基于当前系统环境设置和库函数localtime_r提供的信息导出的，
+*   其长度和内容可能会根据不同的系统和时区设置而变化。
+* - 时区偏移和名称的初始化仅在方法首次被调用时执行，之后将返回缓存结果，
+*   减少对系统调用的重复请求。
+*/
   std::pair<long int, std::string> timezone() const
   {
     static thread_local long int t_off = std::numeric_limits<long int>::min();
@@ -227,6 +309,11 @@ public:
   std::string formatNano() const { return formatInternal(SecFracLen::Nano); }
 
 private:
+  /**
+  * @brief 将当前时间点转换成 struct tm 格式的时间表示。
+  *
+  * @return 返回 struct tm 对象，表示本地时间。
+  */
   struct tm toTm() const
   {
     struct tm t;
@@ -236,6 +323,12 @@ private:
     return t;
   }
 
+  /**
+  * @brief 根据给定的秒数小数长度格式化时间。
+  *
+  * @param fracLen 小数点后的秒数长度，可以是秒、毫秒、微秒或纳秒。
+  * @return 返回一个已格式化的日期时间字符串。
+  */
   std::string formatInternal(size_t fracLen) const
   {
     char datetime[40];
@@ -249,6 +342,15 @@ private:
     return std::string(datetime, p - datetime);
   }
 
+  /**
+  * @brief 格式化日期部分。
+  *
+  * @param to 指向目标存储区的指针。
+  * @param year 年份。
+  * @param mon 月份。
+  * @param mday 月中的日。
+  * @return 返回格式化后的长度。
+  */
   size_t formatDate(char *to, int year, int mon, int mday) const
   {
     char *p = to;
@@ -260,6 +362,16 @@ private:
     return p - to;
   }
 
+  /**
+   * @brief 格式化完整的时间，包括时、分、秒和小数部分。
+   *
+   * @param to 指向目标存储区的指针。
+   * @param hour 小时。
+   * @param min 分钟。
+   * @param sec 秒。
+   * @param fracLen 小数长度。
+   * @return 返回格式化后的长度。
+   */
   size_t formatTime(char *to, int hour, int min, int sec,
                     size_t fracLen) const {
     char *p = to;
@@ -268,6 +380,16 @@ private:
     return p - to;
   }
 
+  /**
+  * @brief 格式化时间的小时、分钟和秒部分，不包括时间偏移。
+  *
+  * @param to 指向目标存储区的指针。
+  * @param hour 小时。
+  * @param min 分钟。
+  * @param sec 秒。
+  * @param fracLen 小数点后的长度。
+  * @return 返回格式化后的长度。
+  */
   size_t formatPartialTime(char *to, int hour, int min, int sec,
                            size_t fracLen) const {
     char *p = to;
@@ -280,6 +402,14 @@ private:
     return p - to;
   }
 
+  /**
+  * @brief 格式化秒的小数部分。
+  *
+  * @param to 指向目标存储区的指针。
+  * @param frac 秒的小数部分。
+  * @param fracLen 小数长度。
+  * @return 返回格式化后的长度。
+  */
   size_t formatSecFrac(char *to, int frac, size_t fracLen) const
   {
     if (fracLen == 0 || frac == 0)
@@ -291,6 +421,12 @@ private:
     return p - to;
   }
 
+  /**
+  * @brief 格式化时间偏移部分。
+  *
+  * @param to 指向目标存储区的指针。
+  * @return 返回格式化后的长度。
+  */
   size_t formatTimeOff(char *to) const
   {
     long int off = timezone().first;
@@ -314,6 +450,17 @@ private:
   TimePoint tp_;
 };
 
+/**
+ * @brief 获取当前线程的ID。
+ *
+ * 这个函数使用 thread_local 关键字保存每个线程独立的线程ID，确保只在每个线程中只进行一次计算。
+ *
+ * @return 返回当前线程的ID，如果线程ID未被初始化（在本线程中首次调用此函数），则生成后返回。
+ *
+ * 注意：
+ * - 这个函数是线程安全的，因为它为每个线程返回一个独立的线程ID。
+ * - 线程ID在首次调用时计算并保存，在之后的调用中直接返回保存的线程ID，从而避免不必要的调用。
+ */
 inline thread_id_t gettid()
 {
   static thread_local thread_id_t t_tid = 0;
@@ -329,7 +476,28 @@ inline thread_id_t gettid()
 
 enum LogLevel : uint8_t { kTrace, kDebug, kInfo, kWarn, kError, kFatal };
 
-// 将日志等级转换为长度为5的字符串。
+/**
+ * @brief 将日志等级枚举转换为长度为5的字符串表示。
+ *
+ * 该函数提供一种将日志等级（如：TRACE, DEBUG, INFO等）从枚举转换为字符串表示的方便方法，
+ * 便于在日志输出等场景中使用。
+ *
+ * @param level 日志等级的枚举值。有效值包括：
+ *              - TRACE (对应 "TRAC")
+ *              - DEBUG (对应 "DEBU")
+ *              - INFO  (对应 "INFO")
+ *              - WARN  (对应 "WARN")
+ *              - ERROR (对应 "ERRO")
+ *              - FATAL (对应 "FATA")
+ *              
+ * @return 返回一个指向字符数组的指针，该数组以 null 终止，表示输入等级对应的字符串表示。
+ *         如果传入的等级值超出了预期范围，程序的行为是未定义的。
+ *
+ * 注意：
+ * - 调用者不应修改返回的字符串。
+ * - 该函数依赖于硬编码的字符串数组索引，需要确保传入的LogLevel枚举值与字符串数组中的位置匹配。
+ * - 由于使用了静态字符串数组，该方法是线程安全的。 
+ */
 static const char *stringifyLogLevel(LogLevel level)
 {
   const char *levelName[] = {"TRAC", "DEBU", "INFO", "WARN", "ERRO", "FATA"};
@@ -403,7 +571,24 @@ public:
     return avail;
   }
 
-  // 从 a 中复制 n 字节日志信息到缓冲区。当缓冲区空间不足时将会阻塞。
+  /**
+ * @brief 从给定的源数据复制 n 字节到阻塞队列（生产操作）。
+ *
+ * @details 具体来说，首先计算当前缓冲区可用空间和源数据大小的较小值，
+ *    然后再根据可用空间计算出两个偏移量：一个是从当前生产位置到缓冲区末尾的距离，
+ *    另一个是剩余的到达缓冲区起始位置的距离。之后为了保持循环队列的特性，
+ *    首先将源数据的起始部分复制到当前生产位置至缓冲区末尾的空间中，
+ *    然后如果还有剩余的数据，将其复制到缓冲区的前部直到数据复制完成。
+ *
+ *    在复制完成后，生产位置会向后移动n个位置。然后设置内存屏障，防止编译器和CPU乱序执行。
+ *
+ * @note 本方法是线程安全的。如果缓冲区的空闲空间不足以容纳需要复制的数据，
+ *   此方法会阻塞直到有足够的空间为止。因此，此方法可能会阻塞调用线程。
+ *   若要避免阻塞，调用者应确保此方法在有足够的空闲空间时调用。
+ *
+ * @param from 指向源数据的指针。
+ * @param n 源数据的大小（字节数）。
+ */
   void produce(const char *from, uint32_t n)
   {
     n = std::min(size(), n);
@@ -458,11 +643,24 @@ public:
 
   void produce(const char *data, size_t n) { buffer_.produce(data, n); }
 
+  /**
+   * @brief 强制将缓冲区的数据输出并重置缓冲区。
+   *
+   * @details 这个函数有两个主要步骤：首先根据给定的数值 n 递增消费位置，引导缓冲区准备输出数据；
+   *    然后，通过 output_ 函数将缓冲区现有的可消费数据输出。最后重置整个缓冲区以便接下来的使用。
+   *
+   * @note 调用者需要谨慎调用此方法，因为此方法会导致缓冲区现有的所有数据被输出并且缓冲区被重置，
+   *   任何尚未输出的数据将被丢弃。此外，提供的 n 值应符合预期（即不超过可消费数据的数量），
+   *   否则可能会引发预期之外的行为。
+   *
+   * @param n 消费的位置递增的大小（字节数）。
+   *
+   */
   void flush(size_t n)
   {
-    buffer_.incConsumablePos(n);
-    output_(buffer_.data(), buffer_.consumable());
-    buffer_.reset();
+      buffer_.incConsumablePos(n);
+      output_(buffer_.data(), buffer_.consumable());
+      buffer_.reset();
   }
 
 private:
@@ -522,8 +720,23 @@ public:
   }
 
 private:
-  // 获取当前线程的logger实例，若不存在则创建一个。
-  Logger *logger() {
+  /**
+ * @brief 获取当前线程的Logger实例。
+ *
+ * @details 此函数用于获取与当前线程关联的Logger对象。如果当前线程还没有Logger对象，则会创建一个新的Logger实例，
+ * 并将其与当前线程关联。新创建的Logger实例的输出函数会被设置为类内预定义的output_函数，并且该Logger实例会被添加到loggers_列表中以便管理。
+ * 使用 thread_local 关键字确保每个线程都有自己的Logger实例，这样可以避免跨线程的数据竞争问题。
+ *
+ * 函数首先会检查当前线程的Logger实例是否已存在，如果不存在，则使用互斥锁确保线程安全地创建并初始化一个新的Logger实例。
+ * 此过程中的互斥锁保证了即使在多线程环境下，Logger实例的创建和初始化也是线程安全的。
+ *
+ * @note 调用此函数前不需要进行任何初始化或设置操作。但是，调用者需要确保output_函数已经被正确设置，
+ * 以便新创建的Logger实例能够正确输出日志信息。创建的Logger实例将会在程序执行期间一直存在，除非手动管理其生命周期。
+ *
+ * @return 返回一个指向当前线程Logger实例的指针。每个线程将获得一个独立的Logger实例。
+ */
+  Logger *logger()
+  {
     static thread_local Logger *l = nullptr;
     if (!l) {
       std::lock_guard<std::mutex> lock(loggerMutex_);
