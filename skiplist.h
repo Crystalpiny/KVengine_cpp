@@ -25,6 +25,8 @@
 #include <ostreamwrapper.h>
 #include <writer.h>
 
+#include "logMod.h"
+
 #define STORE_FILE "store/dumpFile" // 宏定义数据持久化文件路径和文件名
 #define CHRONO_STORE_FILE_NAME "chrono_dump_file"    //宏定义定时数据持久化基础文件名
 
@@ -578,6 +580,7 @@ bool SkipList<K, V>::update_element_value(K key, V new_value, V &old_value)
 template<typename K, typename V>
 void SkipList<K, V>::display_list()
 {
+    LOG_INFO << "Beginning display of SkipList.";
     std::vector<std::string> lines; // 用于存储每一层的字符串
   
     // 遍历所有层级
@@ -624,13 +627,14 @@ void SkipList<K, V>::display_list()
     {
         std::cout << line << '\n';
     }
+    LOG_INFO << "Display of SkipList completed.";
 }
 
 // 内存中数据持久化到本地磁盘中的文件
 template<typename K, typename V>
 void SkipList<K, V>::dump_file()
 {
-
+    LOG_INFO << "Starting dump of SkipList to " << STORE_FILE;
     std::cout << "dump_file-----------------" << std::endl;
     //  打开文件
     _file_writer.open(STORE_FILE);
@@ -653,7 +657,7 @@ void SkipList<K, V>::dump_file()
 template<typename K, typename V>
 void SkipList<K, V>::load_file()
 {
-
+    LOG_INFO << "Starting load data from SkipList " << STORE_FILE;
     _file_reader.open(STORE_FILE);
     std::cout << "load_file-----------------" << std::endl;
     //  保存从文件中读取的数据
@@ -832,7 +836,7 @@ SkipList<K, V>::SkipList(int max_level)
 template<typename K, typename V>
 SkipList<K, V>::~SkipList()
 {
-
+    LOG_INFO << "Destroying skiplist";
     if (_file_writer.is_open())
     {
         _file_writer.close();
@@ -869,6 +873,7 @@ int SkipList<K, V>::get_random_level()
 template <typename K, typename V>
 void SkipList<K, V>::clear()
 {
+    LOG_INFO << "Starting SkipList clear operation.";
     // 遍历跳表的每一层，从最底层开始
     Node<K, V>* current = _header->forward[0];
     while (current != nullptr)
@@ -887,14 +892,17 @@ void SkipList<K, V>::clear()
     // 重置跳表的当前层级和元素计数
     _skip_list_level = 0; // 假设跳表初始化时至少有一层
     _element_count = 0;
+    LOG_INFO << "SkipList cleared successfully.";
 }
 
 template<typename K, typename V>
 void SkipList<K, V>::load_from_json(const std::string& file_name)
 {
+    LOG_INFO << "Loading SkipList from JSON file: " << file_name;
     std::ifstream ifs(file_name);
     if (!ifs.is_open())
     {
+        LOG_ERROR << "Error: Cannot open file " << file_name;
         std::cerr << "Error: Cannot open file " << file_name << std::endl;
         return;
     }
@@ -906,6 +914,7 @@ void SkipList<K, V>::load_from_json(const std::string& file_name)
 
     if (!doc.IsArray())
     {
+        LOG_ERROR << "Error: JSON file must contain an array of key-value pairs.";
         std::cerr << "Error: JSON file must contain an array of key-value pairs" << std::endl;
         return;
     }
@@ -933,6 +942,7 @@ void SkipList<K, V>::load_from_json(const std::string& file_name)
             continue;
         }
     }
+    LOG_INFO << "Successfully loaded " << doc.Size() << " elements from JSON.";
 }
 
 template<typename K, typename V>
@@ -949,11 +959,13 @@ void SkipList<K, V>::save_to_json(const std::string& basic_file_name)
 
     // 创建带有时间标签的文件名
     std::string file_name_with_time = "C:/SoftWare/VScode-dir/KVengine_cpp/store/" + basic_file_name + "_" + time_str + ".json";
+    LOG_INFO << "Saving SkipList to JSON file: " << file_name_with_time;
 
     // 使用新的文件名打开文件输出流
     std::ofstream ofs(file_name_with_time);
     if (!ofs.is_open())
     {
+        LOG_ERROR << "Error: Cannot open file " << file_name_with_time;
         std::cerr << "Error: Cannot open file " << file_name_with_time << std::endl;
         return;
     }
@@ -983,6 +995,8 @@ void SkipList<K, V>::save_to_json(const std::string& basic_file_name)
 
     // 关闭文件流
     ofs.close();
+
+    LOG_INFO << "SkipList successfully saved to JSON.";
 }
 
 template<typename K, typename V>
