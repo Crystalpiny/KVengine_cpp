@@ -16,6 +16,7 @@
 /* 引入外部库*/
 #include "progressbar.hpp"
 #include "document.h"
+#include "logMod.h"
 
 std::mutex mtx;     // 互斥锁，保护临界区资源
 std::string delimiter = ":";    //  键值对之间的分隔符
@@ -33,9 +34,11 @@ const std::string configFilePath = "C:/SoftWare/VScode-dir/KVengine_cpp/config.j
 
 bool ReadProgressBar(bool& useProgressBar)
 {
+    LOG_INFO << "Attempting to read progress bar configuration.";
     std::ifstream configFile(configFilePath);
     if (!configFile.is_open())
     {
+        LOG_ERROR << "Unable to open config file for progress bar configuration.";
         std::cerr << "Unable to open config file." << std::endl;
         return false;
     }
@@ -46,6 +49,7 @@ bool ReadProgressBar(bool& useProgressBar)
 
     if (!doc.IsObject() || !doc.HasMember("skipListBenchmark") || !doc["skipListBenchmark"].IsObject())
     {
+        LOG_ERROR << "Invalid config format for progress bar configuration.";
         std::cerr << "Invalid config format." << std::endl;
         return false;
     }
@@ -54,6 +58,7 @@ bool ReadProgressBar(bool& useProgressBar)
     if (benchmark.HasMember("useProgressBar") && benchmark["useProgressBar"].IsBool())
     {
         useProgressBar = benchmark["useProgressBar"].GetBool();
+        LOG_INFO << "Progress bar configuration read successfully: " << (useProgressBar ? "Enabled" : "Disabled");
         return true;
     }
 
@@ -155,6 +160,7 @@ std::unique_ptr<SkipList<int, std::string>> init_benchmark_data()
 
 void skiplist_benchmark()
 {
+    LOG_INFO << "Starting skip list benchmark.";
     std::unique_ptr<SkipList<int, std::string>> skipList = init_benchmark_data();
 
     int testMode = 0;
@@ -180,21 +186,28 @@ void skiplist_benchmark()
     switch (testMode)
     {
         case 1:
+            LOG_INFO << "Starting ThreadPool benchmark test.";
             insert_test_threadpool(skipList);
             completedTasks = 0; // 重置计数器
             search_test_threadpool(skipList);
+            LOG_INFO << "ThreadPool benchmark test completed.";
             break;
         case 2:
+            LOG_INFO << "Starting Multi-Thread benchmark test.";
             insert_test_multithread(skipList);
             completedTasks = 0; // 重置计数器
             search_test_multithread(skipList);
+            LOG_INFO << "Multi-Thread benchmark test completed.";
             break;
         case 3:
+            LOG_INFO << "Starting CTPL benchmark test.";
             insert_test_ctpl(skipList);
             completedTasks = 0; // 重置计数器
             search_test_ctpl(skipList);
+            LOG_INFO << "CTPL benchmark test completed.";
             break;
         default:
+            LOG_ERROR << "Unknown test mode selected.";
             std::cout << "未知的测试模式。" << std::endl;
             break;
     }
