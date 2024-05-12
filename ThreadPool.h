@@ -11,6 +11,8 @@
 #include <functional>
 #include <stdexcept>
 
+#include "logMod.h"
+
 /**
  * @brief 线程池类
  * 
@@ -105,6 +107,7 @@ private:
 inline ThreadPool::ThreadPool(size_t threads)
     :   stop(false)
 {
+    LOG_INFO << "ThreadPool is being created with " << threads << " threads";
     for(size_t i = 0;i<threads;++i)
         workers.emplace_back(
             [this]
@@ -156,6 +159,7 @@ auto ThreadPool::enqueue(F&& f, Args&&... args)
 //析构函数,回收所有线程资源
 inline ThreadPool::~ThreadPool()
 {
+    LOG_INFO << "ThreadPool is being destroyed";
     {
         std::unique_lock<std::mutex> lock(queue_mutex);
         stop = true;
