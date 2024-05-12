@@ -5,6 +5,7 @@
 #include "benchmark.h"
 #include "JsonTest.h"
 #include "ConfigUpdater/ConfigUpdater.h"
+#include "logMod.h"
 
 /**
  * @file main.cpp
@@ -33,12 +34,21 @@
  */
 int main()
 {
+
+    // 在初始化过程中设置日志输出并设置日志等级
+    setDefaultLogOutputFunction();
+    limlog::singleton()->setLogLevel(limlog::LogLevel::kDebug);
+
     system("chcp 65001");   // 设置字符编码为UTF-8，解决中文乱码问题。
+
+    LOG_INFO << "程序启动,字符编码设置为UTF-8。";
 
     bool skiplist_benchmark_executed = false; // 标志变量，用于标记Benchmark测试是否已经执行过。
 
     while (true)
     {
+        LOG_INFO << "显示主菜单给用户。";
+
         std::cout << "选择操作：\n1. 进行Benchmark测试\n2. 跳表API接口测试\n3. 命令识别模式\n4. 测试JSON存取\n5. 修改配置文件\n6. 退出程序\n请输入选项:" << std::endl;
         int choice;
         std::cin >> choice;
@@ -47,6 +57,7 @@ int main()
         {
             std::cin.clear();
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            LOG_WARN << "用户输入无效，要求用户重新输入。";
             std::cout << "输入无效。请输入数字。\n";
             continue;
         }
@@ -54,24 +65,29 @@ int main()
         switch (choice)
         {
             case 1:
+                LOG_DEBUG << "用户选择执行Benchmark测试。";
                 if (skiplist_benchmark_executed)
                 {
                     // 如果Benchmark测试已经执行过，提示用户并返回主菜单。
+                    LOG_WARN << "用户试图重新执行Benchmark测试,但测试已经执行过。";
                     std::cout << "Benchmark测试已经执行过。请选择其他操作。\n";
                 }
                 else
                 {
                     // 进入Benchmark测试框架，并标记Benchmark测试已执行。
+                    LOG_INFO << "Benchmark测试开始执行。";
                     skiplist_benchmark();
                     skiplist_benchmark_executed = true;
                 }
                 break;
             case 2:
                 // 进行跳表API接口测试。
+                LOG_DEBUG << "用户选择执行跳表API接口测试。";
                 skiplist_usual_use();
                 break;
             case 3:
                 // 进入命令识别模式。
+                LOG_DEBUG << "用户选择进入命令识别模式。";
                 {
                     // 创建一个整型键和字符串值的跳表，最大层级为 10
                     SkipList<int, std::string> skipList(10);
@@ -82,18 +98,23 @@ int main()
                 }
                 break;
             case 4:
+                LOG_DEBUG << "用户选择测试JSON存取接口。";
                 test_load_save_interface();
                 break;
             case 5:
                 // 修改配置文件
+                LOG_DEBUG << "用户选择修改配置文件。";
                 updateConfiguration();
                 break;
             case 6:
+                LOG_INFO << "用户选择退出程序。";
                 std::cout << "退出程序。" << std::endl;
                 return 0;
             default:
+                LOG_WARN << "用户输入了无效选项： " << choice;
                 std::cout << "无效选项。请重新输入。\n";
         }
     }
+    LOG_INFO << "程序正常退出。";
     return 0;
 }

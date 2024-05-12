@@ -1,8 +1,10 @@
 .idea/
 main.exe
 build/
-cmake-build-debug-mingw/
+/cmake-build-debug-mingw/
 CMakeSettings.json
 skiplist.exe
-cmake-build-debug/
+/cmake-build-debug/
 C:/SoftWare/VScode-dir/KVengine_cpp/store/*
+/logs/
+/store/

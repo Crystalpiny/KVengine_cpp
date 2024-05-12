@@ -3,6 +3,7 @@
 
 #include <string.h>
 
+#include <iostream>
 #include <algorithm>
 #include <atomic>
 #include <chrono>
@@ -11,7 +12,12 @@
 #include <type_traits>
 #include <vector>
 
+#include <fstream>
+#include <filesystem>
 #include <sstream>
+
+const std::string LOG_FOLDER = "C:/SoftWare/VScode-dir/KVengine_cpp/logs"; // 日志文件存放目录
+const ssize_t MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB 最大文件大小
 typedef unsigned int thread_id_t;
 
 namespace limlog {
@@ -286,10 +292,15 @@ public:
     if (t_off == std::numeric_limits<long int>::min()) {
       struct tm t;
       time_t c = std::chrono::system_clock::to_time_t(tp_);
+      #ifdef __unix__
       localtime_r(&c, &t);
       t_off = t.tm_gmtoff;
       std::copy(t.tm_zone,
                 t.tm_zone + std::char_traits<char>::length(t.tm_zone), t_zone);
+      #else
+      std::strcpy(t_zone, "UTC");
+      t_off = 0;
+      #endif
     }
 
     return std::make_pair(t_off, t_zone);
@@ -309,6 +320,16 @@ public:
   std::string formatNano() const { return formatInternal(SecFracLen::Nano); }
 
 private:
+#ifdef _WIN32
+    // Windows环境下使用localtime_s
+    struct tm toTm() const
+    {
+        struct tm t;
+        time_t c = std::chrono::system_clock::to_time_t(tp_);
+        localtime_s(&t, &c); // 适配Windows
+        return t;
+    }
+#else
   /**
   * @brief 将当前时间点转换成 struct tm 格式的时间表示。
   *
@@ -322,6 +343,7 @@ private:
 
     return t;
   }
+#endif
 
   /**
   * @brief 根据给定的秒数小数长度格式化时间。
@@ -778,9 +800,9 @@ public:
 };
 
 // 内存中的日志格式
-//  +-------+------+-----------+------+------+------------+------+
-//  | level | time | thread id | logs | file | (function) | line |
-//  +-------+------+-----------+------+------+------------+------+
+//  +--------+-------+--------------+------+-----+--------------+------+
+//  | level | time | thread id | line | file | (function) | logs |
+//  +--------+-------+--------------+------+-----+--------------+------+
 class LogLine {
 public:
   LogLine() = delete;
@@ -883,5 +905,156 @@ private:
 #define LOG_WARN LOG_LOC(limlog::LogLevel::kWarn)
 #define LOG_ERROR LOG_LOC(limlog::LogLevel::kError)
 #define LOG_FATAL LOG_LOC(limlog::LogLevel::kFatal)
+
+class FileLogger
+{
+public:
+    static ssize_t write(const char *data, size_t n)
+    {
+        static std::ofstream logFile;
+        static std::string currentLogFileName = getTodayLogFileName();
+        static size_t currentFileSize = std::filesystem::exists(currentLogFileName)
+                                            ? std::filesystem::file_size(currentLogFileName)
+                                            : 0;
+
+        ensureLogFolderExists();
+        try
+        {
+            ensureLogFileIsOpen(logFile, currentLogFileName, currentFileSize);
+            logFile.write(data, n);
+            if (!logFile.good())
+            {
+                throw std::runtime_error("Failed to write to log file");
+            }
+            currentFileSize += n;
+        }
+        catch (const std::exception &e)
+        {
+            // 如果写入文件失败，则输出到控制台
+            std::cerr << "Exception caught in logger: " << e.what() << "\n";
+            std::cerr << "Logging to console instead: " << std::string(data, n) << "\n";
+            return -1;
+        }
+
+        return n; // 返回写入字节数
+    }
+
+private:
+    static void ensureLogFolderExists()
+    {
+        if (!std::filesystem::exists(LOG_FOLDER))
+        {
+            std::filesystem::create_directory(LOG_FOLDER);
+        }
+    }
+
+    static void ensureLogFileIsOpen(std::ofstream &logFile, std::string &currentLogFileName, size_t &currentFileSize)
+    {
+        if (!logFile.is_open() || isNextDay() || currentFileSize >= MAX_FILE_SIZE)
+        {
+            rollOver(logFile, currentLogFileName);
+            currentFileSize = 0;                        // 重置当前文件大小计数器
+            currentLogFileName = getTodayLogFileName(); // 更新当前日志文件的引用
+        }
+    }
+
+    static bool isNextDay()
+    {
+        static auto lastLogTime = std::chrono::system_clock::now(); // 上次记录日志的时间
+        auto now = std::chrono::system_clock::now();
+        auto time_t_now = std::chrono::system_clock::to_time_t(now);
+        auto time_t_last = std::chrono::system_clock::to_time_t(lastLogTime);
+
+        std::tm tm_now{}, tm_last{};
+#ifdef _WIN32
+        localtime_s(&tm_now, &time_t_now);
+        localtime_s(&tm_last, &time_t_last);
+#else
+        localtime_r(&time_t_now, &tm_now);
+        localtime_r(&time_t_last, &tm_last);
+#endif
+
+        if (tm_now.tm_mday != tm_last.tm_mday || // 检查是否为新的一天
+            tm_now.tm_mon != tm_last.tm_mon ||   // 同月检查
+            tm_now.tm_year != tm_last.tm_year)
+        {                      // 同年检查
+            lastLogTime = now; // 更新最后记录时间为当前时间
+            return true;       // 是新的一天
+        }
+        return false; // 不是新的一天
+    }
+
+    static std::string getTodayLogFileName()
+    {
+        auto now = std::chrono::system_clock::now();
+        auto time_t_now = std::chrono::system_clock::to_time_t(now);
+        std::tm tm_now{};
+#ifdef _WIN32
+        localtime_s(&tm_now, &time_t_now);
+#else
+        localtime_r(&time_t_now, &tm_now);
+#endif
+
+        char buffer[64];
+        strftime(buffer, sizeof(buffer), "logfile_%Y%m%d.txt", &tm_now);
+        return (std::filesystem::path(LOG_FOLDER) / buffer).string();
+    }
+
+    static void rollOver(std::ofstream &logFile, std::string &currentLogFileName)
+    {
+        if (logFile.is_open())
+        {
+            logFile.close(); // 关闭当前日志文件
+        }
+
+        // 重命名当前文件以反映其已经完成
+        auto new_log_name = generateRolledLogFileName(currentLogFileName);
+        try
+        {
+            std::filesystem::rename(currentLogFileName, new_log_name);
+        }
+        catch (const std::filesystem::filesystem_error &e)
+        {
+            std::cerr << "Failed to rotate log file: " << e.what() << "\n";
+        }
+
+        // 打开新的日志文件
+        logFile.open(getTodayLogFileName(), std::ofstream::out | std::ofstream::app);
+        if (!logFile)
+        {
+            throw std::runtime_error("Unable to open new log file for the day");
+        }
+    }
+
+    static std::string generateRolledLogFileName(const std::string &currentLogFileName)
+    {
+        auto index = currentLogFileName.find_last_of('.');
+        if (index == std::string::npos)
+            index = currentLogFileName.length();
+        auto rolledName = currentLogFileName.substr(0, index);
+        std::tm now_tm{};
+
+        // 添加时间戳
+        auto now = std::chrono::system_clock::now();
+        auto time_t_now = std::chrono::system_clock::to_time_t(now);
+#ifdef _WIN32
+        localtime_s(&now_tm, &time_t_now);
+#else
+        localtime_r(&time_t_now, &now_tm);
+#endif
+
+        char buffer[64];
+        strftime(buffer, sizeof(buffer), "%H%M%S", &now_tm);
+        rolledName.append("_").append(buffer);
+
+        return rolledName.append(".txt"); // 返回重命名后日志文件的名称
+    }
+};
+
+// 全局函数设置默认日志输出
+void setDefaultLogOutputFunction()
+{
+    limlog::singleton()->setOutput(FileLogger::write);
+}
 
 #endif // LOG_MOD_H
