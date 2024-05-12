@@ -10,9 +10,11 @@
 #include "ostreamwrapper.h"
 #include "prettywriter.h"
 #include "istreamwrapper.h"
+#include "logMod.h"
 
 bool ConfigUpdater::UpdateUseProgressBar(const std::string &filename, bool newValue)
 {
+    LOG_INFO << "Attempting to update 'useProgressBar' setting in file: " << filename;
     // 读取现有配置文件
     std::ifstream ifs(filename);
     if (!ifs.is_open())
@@ -61,6 +63,7 @@ bool ConfigUpdater::UpdateUseProgressBar(const std::string &filename, bool newVa
 
 bool ConfigUpdater::UpdateUseRandRNG(const std::string &filename, bool newValue)
 {
+    LOG_INFO << "Attempting to update 'useRandRNG' setting in file: " << filename;
     // 打开并读取配置文件
     std::ifstream ifs(filename);
     if (!ifs.is_open()) return false;
@@ -112,6 +115,7 @@ bool promptForBoolean(const std::string& prompt)
 
 bool updateConfigFile(const std::string& configFilePath, const std::string& section, const std::string& field, bool value)
 {
+    LOG_INFO << "Updating '" << field << "' in the '" << section << "' section of the config file: " << configFilePath;
     // 读取配置文件
     std::ifstream ifs(configFilePath);
     if (!ifs.is_open())
@@ -160,6 +164,7 @@ bool updateConfigFile(const std::string& configFilePath, const std::string& sect
 
 void updateConfiguration()
 {
+    LOG_INFO << "Starting configuration update process";
     std::string configFilePath = "C:/SoftWare/VScode-dir/KVengine_cpp/config.json";
     
     // 定义配置字段及其对应更新函数的映射
