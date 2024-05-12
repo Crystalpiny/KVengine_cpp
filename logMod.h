@@ -1118,7 +1118,7 @@ private:
 };
 
 // 全局函数设置默认日志输出
-void setDefaultLogOutputFunction()
+inline void setDefaultLogOutputFunction()
 {
     limlog::singleton()->setOutput(FileLogger::write);
     limlog::singleton()->setLogLevel(limlog::LogLevel::kDebug);

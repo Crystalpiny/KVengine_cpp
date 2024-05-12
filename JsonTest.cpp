@@ -20,7 +20,7 @@ std::string get_latest_file(const std::string& folder_path)
             {
                 latest_time = current_time;
                 latest_file = entry.path();
-                LOG_DEBUG << "New latest JSON file found: " << latest_file;
+                LOG_DEBUG << "New latest JSON file found: " << latest_file.string();
             }
         }
     }
@@ -30,7 +30,7 @@ std::string get_latest_file(const std::string& folder_path)
     }
     else
     {
-        LOG_INFO << "Latest JSON file determined: " << latest_file;
+        LOG_INFO << "Latest JSON file determined: " << latest_file.string();
     }
 
   return latest_file.string();

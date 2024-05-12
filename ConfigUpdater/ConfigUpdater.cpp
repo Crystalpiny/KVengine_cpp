@@ -10,7 +10,7 @@
 #include "ostreamwrapper.h"
 #include "prettywriter.h"
 #include "istreamwrapper.h"
-#include "logMod.h"
+#include "../logMod.h"
 
 bool ConfigUpdater::UpdateUseProgressBar(const std::string &filename, bool newValue)
 {
