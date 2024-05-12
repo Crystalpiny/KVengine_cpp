@@ -11,6 +11,8 @@
 #include <mutex>
 #include <queue>
 
+#include "logMod.h"
+
 
 
 // 线程池用于运行用户的函数，其签名如下：
@@ -147,7 +149,12 @@ namespace ctpl
          * 线程池在创建时会分配资源，包括线程和同步原语，因此在不需要时应该及时销毁线程池，
          * 以释放这些资源。
          */
-        thread_pool(int nThreads) { this->init(); this->resize(nThreads); }
+        thread_pool(int nThreads)
+        {
+            LOG_INFO << "Initializing thread pool with " << nThreads << " threads.";
+            this->init();
+            this->resize(nThreads);
+        }
 
         /**
          * @brief 析构函数，确保所有任务执行完毕后再销毁线程池。
@@ -167,6 +174,7 @@ namespace ctpl
          */
         ~thread_pool()
         {
+            LOG_INFO << "Destroying thread pool.";
             this->stop(true);
         }
 
@@ -364,6 +372,7 @@ namespace ctpl
             // 如果线程池中没有线程，但队列中有一些函数，则这些函数不会被线程删除
             // 因此，在这里删除它们
             this->clear_queue();
+            LOG_INFO << "Thread pool stopped. All threads have been joined.";
             this->threads.clear();
             this->flags.clear();
         }
@@ -489,6 +498,7 @@ namespace ctpl
                         return;  // 如果队列为空并且 this->isDone == true 或者 *flag，则返回
                 }
             };
+            LOG_INFO << "Creating thread with index: " << i;
             this->threads[i].reset(new std::thread(f));
         }
 
