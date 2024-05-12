@@ -35,9 +35,8 @@
 int main()
 {
 
-    // 在初始化过程中设置日志输出并设置日志等级
+    // 在初始化过程中设置日志输出&日志等级
     setDefaultLogOutputFunction();
-    limlog::singleton()->setLogLevel(limlog::LogLevel::kDebug);
 
     system("chcp 65001");   // 设置字符编码为UTF-8，解决中文乱码问题。
 

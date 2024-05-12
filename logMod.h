@@ -906,9 +906,28 @@ private:
 #define LOG_ERROR LOG_LOC(limlog::LogLevel::kError)
 #define LOG_FATAL LOG_LOC(limlog::LogLevel::kFatal)
 
+/**
+ * @brief 文件日志类，提供静态方法写日志到文件。
+ *
+ * @details 该类实现了一个简单的文件日志系统。它会确保每天只使用一个日志文件，当文件大小达到预设的最大值，
+ *          或者日期变更时，当前的日志文件会被轮替(即关闭当前文件并用新的时间戳创建新文件)。
+ *          如果写入失败，会将异常捕获并输出到标准错误流(stderr)。
+ */
 class FileLogger
 {
 public:
+    /**
+     * @brief 将数据写入日志文件。
+     *
+     * @details 此函数负责将传入的数据写入到日志文件中。如果日志文件未打开，
+     *          或者已经达到最大文件大小，或者已经过了一天，它将执行文件轮替逻辑。
+     *          如果写入日志文件失败，将抛出异常。
+     *
+     * @param data 指向要写入日志的数据的指针。
+     * @param n 要写入的数据长度。
+     * @return ssize_t 成功写入的数据字节数，如果写入失败则返回-1。
+     * @note 在多线程环境中未加锁，请确保调用时处理好同步问题。
+     */
     static ssize_t write(const char *data, size_t n)
     {
         static std::ofstream logFile;
@@ -940,6 +959,12 @@ public:
     }
 
 private:
+    /**
+     * @brief 确保日志文件夹存在。
+     *
+     * @details 如果日志文件夹不存在，此函数会创建它。
+     * @note 会抛出异常如果无法创建日志文件夹。
+     */
     static void ensureLogFolderExists()
     {
         if (!std::filesystem::exists(LOG_FOLDER))
@@ -948,6 +973,16 @@ private:
         }
     }
 
+    /**
+     * @brief 确保日志文件已打开且可用。
+     *
+     * @details 如果日志文件未打开，或者已经到了新的一天或文件大小达到最大值，它会进行轮替，并开启新的日志文件。
+     *
+     * @param logFile 日志文件ofstream引用。
+     * @param currentLogFileName 当前日志文件名的引用。
+     * @param currentFileSize 当前日志文件大小的引用。
+     * @note 如果无法打开新的日志文件会抛出异常。
+     */
     static void ensureLogFileIsOpen(std::ofstream &logFile, std::string &currentLogFileName, size_t &currentFileSize)
     {
         if (!logFile.is_open() || isNextDay() || currentFileSize >= MAX_FILE_SIZE)
@@ -958,6 +993,13 @@ private:
         }
     }
 
+    /**
+     * @brief 检查是否到了新的一天。
+     *
+     * @details 通过比较系统时间来确定是否已经过了一天，如果是，则需要进行文件轮替。
+     *
+     * @return bool 如果是新的一天返回true，否则返回false。
+     */
     static bool isNextDay()
     {
         static auto lastLogTime = std::chrono::system_clock::now(); // 上次记录日志的时间
@@ -984,6 +1026,13 @@ private:
         return false; // 不是新的一天
     }
 
+    /**
+     * @brief 获取当天的日志文件名。
+     *
+     * @details 根据当前日期生成日志文件的文件名，形式通常为"logfile_YYYYMMDD.txt"。
+     *
+     * @return std::string 返回当天的日志文件名。
+     */
     static std::string getTodayLogFileName()
     {
         auto now = std::chrono::system_clock::now();
@@ -1000,6 +1049,15 @@ private:
         return (std::filesystem::path(LOG_FOLDER) / buffer).string();
     }
 
+    /**
+     * @brief 执行日志文件的轮替操作。
+     *
+     * @details 关闭当前的日志文件，并根据当前时间生成新的文件名，然后打开新的日志文件以供写入。
+     *
+     * @param logFile 日志文件ofstream引用，会被关闭并重新打开。
+     * @param currentLogFileName 当前日志文件名的引用，轮替后会更新为新的文件名。
+     * @note 如果文件重命名失败或无法打开新的日志文件，程序将输出错误信息到stderr，并可能抛出异常。
+     */
     static void rollOver(std::ofstream &logFile, std::string &currentLogFileName)
     {
         if (logFile.is_open())
@@ -1026,6 +1084,14 @@ private:
         }
     }
 
+    /**
+     * @brief 生成轮替后的日志文件名。
+     *
+     * @details 在当前日志文件名的基础上添加时间戳，形成一个新的文件名以表示原文件的轮替。
+     *
+     * @param currentLogFileName 当前日志文件的文件名。
+     * @return std::string 返回包含时间戳的新文件名。
+     */
     static std::string generateRolledLogFileName(const std::string &currentLogFileName)
     {
         auto index = currentLogFileName.find_last_of('.');
@@ -1055,6 +1121,7 @@ private:
 void setDefaultLogOutputFunction()
 {
     limlog::singleton()->setOutput(FileLogger::write);
+    limlog::singleton()->setLogLevel(limlog::LogLevel::kDebug);
 }
 
 #endif // LOG_MOD_H
