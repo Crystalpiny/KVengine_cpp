@@ -13,14 +13,6 @@
 
 #include "logMod.h"
 
-
-
-// 线程池用于运行用户的函数，其签名如下：
-//      ret func(int id, other_params)
-// 其中 id 是运行该函数的线程的索引
-// ret 是某种返回类型
-
-
 namespace ctpl
 {
 

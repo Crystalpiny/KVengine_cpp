@@ -24,7 +24,8 @@
  * - 3: 进入命令识别模式。
  * - 4: 测试JSON存取数据接口。
  * - 5: 修改配置文件中的进度条显示选项。
- * - 6: 退出程序。
+ * - 6: 自动保存跳表测试。
+ * - 7: 退出程序。
  * 用户需要输入对应的数字来选择想要执行的操作。如果输入无效，程序将提示重新输入。
  *
  * @note
@@ -48,7 +49,7 @@ int main()
     {
         LOG_INFO << "显示主菜单给用户。";
 
-        std::cout << "选择操作：\n1. 进行Benchmark测试\n2. 跳表API接口测试\n3. 命令识别模式\n4. 测试JSON存取\n5. 修改配置文件\n6. 退出程序\n请输入选项:" << std::endl;
+        std::cout << "选择操作：\n1. 进行Benchmark测试\n2. 跳表API接口测试\n3. 命令识别模式\n4. 测试JSON存取\n5. 修改配置文件\n6. 自动保存跳表测试\n7. 退出程序\n请输入选项:" << std::endl;
         int choice;
         std::cin >> choice;
 
@@ -106,6 +107,24 @@ int main()
                 updateConfiguration();
                 break;
             case 6:
+                // 自动保存跳表测试
+                LOG_INFO << "用户选择执行自动保存跳表测试。";
+                {
+                    // 创建自动保存跳表的实例
+                    AutoSaveSkipList<int, std::string> autoSaveSkipList(10, "autoSaveData", 5);
+                    // 操纵一些数据作为示例
+                    autoSaveSkipList.insert_element(1, "数据1");
+                    autoSaveSkipList.insert_element(2, "数据2");
+
+                    // 提示用户查看文件，理解自动保存的效果
+                    std::cout << "已插入数据，跳表将在后台自动保存到文件。" << std::endl;
+                    // 主动等待一段时间，让自动保存有机会执行
+                    std::this_thread::sleep_for(std::chrono::seconds(6));
+                }
+                LOG_INFO << "自动保存跳表测试结束，请检查文件以验证结果。";
+                std::cout << "自动保存跳表测试结束，请检查文件以验证结果。\n";
+                break;
+            case 7:
                 LOG_INFO << "用户选择退出程序。";
                 std::cout << "退出程序。" << std::endl;
                 return 0;
