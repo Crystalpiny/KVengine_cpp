@@ -24,6 +24,7 @@ namespace limlog {
 
 // DigitsTable用于查找100以内的数字。
 // 每两个字符对应一位数和十位数。
+// 优化数字转换字符串，EXP：58 * 2 = 116,index 116 and 117 is '5' '8'.
 static constexpr char DigitsTable[200] = {
     '0', '0', '0', '1', '0', '2', '0', '3', '0', '4', '0', '5', '0', '6', '0',
     '7', '0', '8', '0', '9', '1', '0', '1', '1', '1', '2', '1', '3', '1', '4',
@@ -298,8 +299,8 @@ public:
       std::copy(t.tm_zone,
                 t.tm_zone + std::char_traits<char>::length(t.tm_zone), t_zone);
       #else
-      std::strcpy(t_zone, "UTC");
-      t_off = 0;
+      std::strcpy(t_zone, "CST");
+      t_off = 28800;
       #endif
     }
 
