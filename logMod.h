@@ -561,7 +561,7 @@ public:
     return consumablePos_ - consumePos_;
   }
 
-  // 增加可消费位置\ n 个完整日志的长度。
+  // 增加可消费位置 n 个字节完整日志的长度。
   void incConsumablePos(uint32_t n) {
     consumablePos_ += n;
     std::atomic_thread_fence(std::memory_order_release);
@@ -573,7 +573,7 @@ public:
   // 消费 n 字节数据并仅移动消费位置。
   void consume(uint32_t n) { consumePos_ += n; }
 
-  // 将\ n 字节数据消费到\ to 之中。
+  // 将 n 字节数据消费到 to 之中。
   uint32_t consume(char *to, uint32_t n)
   {
     // 可消费的字节数。
